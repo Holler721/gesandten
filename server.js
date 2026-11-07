@@ -21,9 +21,9 @@ const COOKIE = 'sh_sess';
 
 const ROLES = { owner: 4 };
 // Einzelrechte, pro Gruppe auf der Website (Konto -> Gruppen und Rechte) vergebbar
-const PERMS = ['persons', 'files', 'reports', 'opsStart', 'opsManage', 'map', 'others', 'config', 'lockdown', 'open', 'intern', 'secret', 'logs', 'accounts', 'groups', 'archive', 'mark'];
+const PERMS = ['persons', 'files', 'reports', 'opsStart', 'opsManage', 'map', 'others', 'config', 'lockdown', 'open', 'intern', 'secret', 'logs', 'accounts', 'groups', 'archive'];
 const ALLP = {}; PERMS.forEach(function (x) { ALLP[x] = true; });
-const PERM_LBL = { persons: 'Personen', files: 'Akten', reports: 'Berichte', opsStart: 'Op. starten', opsManage: 'Op. steuern', map: 'Karte', others: 'Fremde Inhalte', config: 'Anpassung', lockdown: 'Notfall', open: 'Offen lesen', intern: 'Intern lesen', secret: 'Vertraulich lesen', logs: 'Logs', accounts: 'Konten', groups: 'Gruppen', archive: 'Archiv', mark: 'Beschatten' };
+const PERM_LBL = { persons: 'Personen', files: 'Akten', reports: 'Berichte', opsStart: 'Op. starten', opsManage: 'Op. steuern', map: 'Karte', others: 'Fremde Inhalte', config: 'Anpassung', lockdown: 'Notfall', open: 'Offen lesen', intern: 'Intern lesen', secret: 'Vertraulich lesen', logs: 'Logs', accounts: 'Konten', groups: 'Gruppen', archive: 'Archiv' };
 const WRITE_PERMS = ['persons', 'files', 'reports', 'opsStart'];            // früher „Schreiben“
 const MANAGE_PERMS = ['opsManage', 'map', 'others', 'config', 'lockdown'];  // früher „Verwalten“
 const RANK_MAX = 10, RANK_OWNER = 11, BUILTIN_RANK = { owner: RANK_OWNER };
@@ -259,7 +259,7 @@ function normalizeDb() {
   delete db.ris; delete db.inv; // Feldforschung entfernt
   Object.keys(db.persons).forEach(function (id) {
     const x = db.persons[id]; if (!isObj(x)) return;
-    delete x.kos; delete x.kosWhy;
+    delete x.kos; delete x.kosWhy; delete x.watch; delete x.watchWhy; delete x.wia; delete x.docs; // Beschatten entfernt
     if (isObj(x.wia)) delete x.wia.kos;
     if (isObj(x.docs)) delete x.docs.kos;
   });
@@ -286,7 +286,7 @@ function load() {
     const seed = JSON.parse(fs.readFileSync(path.join(__dirname, 'seed.json'), 'utf8'));
     db = { rev: 1, persons: {}, map: seed.map, users: {}, secret: crypto.randomBytes(32).toString('hex') };
     seed.persons.forEach(function (p, i) {
-      db.persons['p' + String(i + 1).padStart(2, '0')] = Object.assign({}, p, { watch: false, ts: i + 1 });
+      db.persons['p' + String(i + 1).padStart(2, '0')] = Object.assign({}, p, { ts: i + 1 });
     });
   }
   normalizeDb();
@@ -420,8 +420,6 @@ function cleanPerson(b, partial) {
   if ('l' in b || !partial) { o.l = str(b.l, 40) || 'Unbekannt'; }
   if ('note' in b || !partial) { o.note = str(b.note, 300) || 'Keine Notiz.'; }
   if ('seen' in b || !partial) { o.seen = /^\d{2}\.\d{2}\.$/.test(b.seen) ? b.seen : today(); }
-  if ('watch' in b || !partial) { o.watch = !!b.watch; }
-  if ('watchWhy' in b) { o.watchWhy = str(b.watchWhy, 2000); }
   if ('groups' in b || !partial) { o.groups = cleanGroups(b.groups); }
   if ('sp' in b || !partial) { o.sp = str(b.sp, 60); }
   if ('look' in b || !partial) { o.look = str(b.look, 2000); }
@@ -621,9 +619,8 @@ function docsOut(x, me, kinds) {
   return o;
 }
 function wiaOut(x, me, kinds) {
-  const o = { watch: [], order: [], over: { watch: [], order: [] }, lead: { watch: false, order: false } };
-  (kinds || ['watch']).forEach(function (k) {
-    if (k !== 'order' && !x[k]) return;
+  const o = { order: [], over: { order: [] }, lead: { order: false } };
+  (kinds || ['order']).forEach(function (k) {
     const lead = wiaLead(x, k, me);
     o.lead[k] = lead;
     wiaList(x, k).forEach(function (e) {
@@ -732,7 +729,7 @@ async function api(req, res, url) {
     if (since === db.rev) return send(res, 200, { same: true, rev: db.rev });
     const me = sessionUser(req);
     const persons = Object.keys(db.persons).filter(function (id) { return canSee(me, db.persons[id]); })
-      .map(function (id) { const x = db.persons[id]; return Object.assign({ id: id }, x, { wia: wiaOut(x, me), docs: docsOut(x, me, ['watch']), files: (Array.isArray(x.files) ? x.files : []).filter(function (f) { return canSee(me, f); }).map(function (f) { return Object.assign({}, f, { byName: authorId(f.by, f.byName) }); }) }); })
+      .map(function (id) { const x = db.persons[id]; return Object.assign({ id: id }, x, { files: (Array.isArray(x.files) ? x.files : []).filter(function (f) { return canSee(me, f); }).map(function (f) { return Object.assign({}, f, { byName: authorId(f.by, f.byName) }); }) }); })
       .sort(function (a, b) { return (a.ts || 0) - (b.ts || 0); });
     const reports = Object.keys(db.reports).map(function (id) { const x = db.reports[id]; const dcT = Object.keys(db.declass).filter(function (t) { return db.declass[t].rid === id; })[0]; return Object.assign({ id: id }, x, { byName: authorId(x.by, x.byName), dc: dcT ? { by: db.declass[dcT].decName, ts: db.declass[dcT].ts, token: canDecl(me) ? dcT : undefined } : null }, { files: (Array.isArray(x.files) ? x.files : []).filter(function (f) { return canSee(me, f); }).map(function (f) { return Object.assign({}, f, { byName: authorId(f.by, f.byName) }); }) }); })
       .filter(function (r) { return canRead(me, r.cls); })
@@ -845,13 +842,12 @@ async function api(req, res, url) {
     Object.assign(cur, o, { edited: Date.now() }); logAct(ou, 'Sonstigen Auftrag geändert', o.ti); bump();
     return send(res, 200, { ok: true });
   }
-  const dcm = /^\/api\/(persons|orders)\/([A-Za-z0-9_-]{1,40})\/docs(?:\/([a-f0-9]{6,20}))?$/.exec(p);
+  const dcm = /^\/api\/(orders)\/([A-Za-z0-9_-]{1,40})\/docs(?:\/([a-f0-9]{6,20}))?$/.exec(p);
   if (dcm) {
     const isOrd = dcm[1] === 'orders', du = need(req, 'viewer'), cp = (isOrd ? db.orders : db.persons)[dcm[2]];
     if (!cp || (!isOrd && !canSee(du, cp))) return send(res, 404, { error: 'Nicht gefunden.' });
     const b = method === 'DELETE' ? {} : await readBody(req);
-    const kind = isOrd ? 'order' : (b.kind === 'watch' ? 'watch' : (url.searchParams.get('kind') === 'watch' ? 'watch' : ''));
-    if (!kind || (!isOrd && !cp[kind])) return send(res, 400, { error: 'Dieser Auftrag läuft nicht.' });
+    const kind = 'order';
     if (!wiaMember(cp, kind, du)) return send(res, 403, { error: 'Nur Mitglieder des Auftrags dürfen dokumentieren.' });
     if (!isObj(cp.docs)) cp.docs = {};
     if (!Array.isArray(cp.docs[kind])) cp.docs[kind] = [];
@@ -878,15 +874,14 @@ async function api(req, res, url) {
       return send(res, 200, { ok: true });
     }
   }
-  const wm = /^\/api\/(persons|orders)\/([A-Za-z0-9_-]{1,40})\/wia$/.exec(p);
+  const wm = /^\/api\/(orders)\/([A-Za-z0-9_-]{1,40})\/wia$/.exec(p);
   if (wm && method === 'POST') {
     const isOrd = wm[1] === 'orders';
     const wu = need(req, 'viewer'), b = await readBody(req), cp = (isOrd ? db.orders : db.persons)[wm[2]];
     if (!cp || (!isOrd && !canSee(wu, cp))) return send(res, 404, { error: isOrd ? 'Auftrag nicht gefunden.' : 'Person nicht gefunden.' });
-    const kind = isOrd ? 'order' : (b.kind === 'watch' ? 'watch' : '');
-    if (!kind || (!isOrd && !cp[kind])) return send(res, 400, { error: 'Für diese Person läuft dieser Auftrag nicht.' });
+    const kind = 'order';
     cp.n = isOrd ? cp.ti : cp.n;
-    const list = wiaList(cp, kind), K = kind === 'order' ? 'Sonstiger Auftrag' : 'Beschattung';
+    const list = wiaList(cp, kind), K = 'Sonstiger Auftrag';
     const isOwner = wu.role === 'owner', lead = wiaLead(cp, kind, wu);
     const byName = function (s) { s = String(s || '').trim().toLowerCase(); return Object.keys(db.users).map(function (k) { return db.users[k]; }).filter(function (u) { return dispName(u).toLowerCase() === s || u.name === s; })[0]; };
     const who = function (u) { return dispName(u); };
@@ -941,21 +936,17 @@ async function api(req, res, url) {
     if (!cur || !canSee(pu, cur)) return send(res, 404, { error: 'Akte nicht gefunden.' });
     if (method === 'PATCH') {
       const rb = await readBody(req);
-      if (!can(pu, 'persons')) {
-        const only = rb && typeof rb === 'object' && Object.keys(rb).every(function (k) { return ['watch', 'watchWhy'].indexOf(k) >= 0; });
-        if (!can(pu, 'mark') || !only) return send(res, 403, { error: 'Dafür fehlen dir die Rechte (Personen bzw. Beschatten).' });
-      }
+      if (!can(pu, 'persons')) return send(res, 403, { error: 'Dafür fehlen dir die Rechte (Personen).' });
       const o = cleanPerson(rb, true);
-      const LBL = { n: 'Name', r: 'Rang', s: 'Zugehörigkeit', p: 'Gefahrenlevel', l: 'Ort', note: 'Notiz', watch: 'Beschattung', watchWhy: 'Beschattungs-Auftrag', groups: 'Sichtbarkeit', sp: 'Spezies', look: 'Aussehen', extra: 'Weitere Felder' };
+      const LBL = { n: 'Name', r: 'Rang', s: 'Zugehörigkeit', p: 'Gefahrenlevel', l: 'Ort', note: 'Notiz', groups: 'Sichtbarkeit', sp: 'Spezies', look: 'Aussehen', extra: 'Weitere Felder' };
       const ch = [];
       Object.keys(o).forEach(function (k) {
         if (JSON.stringify(o[k]) === JSON.stringify(cur[k])) return;
         if (k === 'r' || k === 's' || k === 'p' || k === 'n' || k === 'l') ch.push(LBL[k] + ': ' + cur[k] + ' → ' + o[k]);
-        else if (k === 'watch') ch.push(o.watch ? 'Beschattung gestartet' : 'Beschattung beendet');
         else if (LBL[k]) ch.push(LBL[k] + ' geändert');
       });
       const before = cur.n;
-      Object.assign(cur, o); if (cur.wia) { if (!cur.watch) delete cur.wia.watch; }
+      Object.assign(cur, o);
       if (ch.length) logAct(pu, 'Person geändert', before + ' (' + ch.join(', ') + ')'); bump();
       return send(res, 200, { ok: true });
     }
