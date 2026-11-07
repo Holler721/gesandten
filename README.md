@@ -156,3 +156,4 @@ Akzentfarbe (Farbfeld oder Hex-Wert) färbt jetzt Kopfzeilen, Knöpfe, Rahmen, A
 
 - **Beschatten:** Funktion, Recht, Tab „Beschattungen“, Dashboard-Karte, Labels und Banner sind entfernt. Alte Beschattungsdaten werden beim Start gelöscht.
 - **Logo:** Das frühere Halbmond-Emblem ist überall durch das Jedi-Ordens-Logo (wie das Seiten-Icon) ersetzt.
+- **Archiv-Look:** Pergament- und Lampenlicht-Farben, Serifenschrift (Cormorant Garamond, Source Serif, Courier Prime über Google Fonts), Katalogkarten-Rahmen, Staubpartikel statt Sternen, Papierkorn. Die Effekte lassen sich unter Jedi-Identität abschalten.
