@@ -198,7 +198,7 @@ function ensureUntouchable() {
       u = db.users[key] = { name: key, display: display, role: 'owner', hash: envPw ? hashPw(envPw) : a.hash, created: new Date().toISOString(), since: Date.now(), mustChange: !envPw };
       logAct(null, 'Unantastbares Konto angelegt', display);
     } else if (envPw && !checkPw(envPw, u.hash)) { u.hash = hashPw(envPw); u.since = Date.now(); u.mustChange = false; }
-    u.role = 'owner'; u.untouchable = true; u.groupLabel = a.group; delete u.blocked; delete u.expires; delete u.inv;
+    u.role = 'owner'; u.untouchable = true; u.groupLabel = a.group; delete u.blocked; delete u.expires;
     if (!u.display) u.display = display;
   });
 }
@@ -255,8 +255,8 @@ function normalizeDb() {
     if (typeof u.display !== 'string' || userKey(u.display) !== k) u.display = u.name || k;
   });
   /* Altlasten entfernen: Jedi-ID (sid), RIS-Konten und -Berichte, KoS */
-  Object.keys(db.users).forEach(function (k) { if (db.users[k].ris) { delete db.users[k]; return; } delete db.users[k].sid; });
-  delete db.ris;
+  Object.keys(db.users).forEach(function (k) { if (db.users[k].ris) { delete db.users[k]; return; } delete db.users[k].sid; delete db.users[k].inv; });
+  delete db.ris; delete db.inv; // Feldforschung entfernt
   Object.keys(db.persons).forEach(function (id) {
     const x = db.persons[id]; if (!isObj(x)) return;
     delete x.kos; delete x.kosWhy;
@@ -265,10 +265,8 @@ function normalizeDb() {
   });
   if (Array.isArray(db.logs)) db.logs.forEach(function (l) { if (isObj(l)) delete l.sid; });
   if (!isObj(db.lockdown)) db.lockdown = { active: false };
-  if (!isObj(db.inv)) db.inv = {};
   if (!isObj(db.declass)) db.declass = {};
   if (!isObj(db.orders)) db.orders = {};
-  ['covers', 'informants', 'talks'].forEach(function (k) { if (!isObj(db.inv[k])) db.inv[k] = {}; });
   if (!isObj(db.archive)) db.archive = {};
   ['powers', 'tasks'].forEach(function (k) { if (!isObj(db.archive[k])) db.archive[k] = {}; });
   if (!Array.isArray(db.logs)) db.logs = [];
@@ -366,47 +364,6 @@ setInterval(function () {
 
 /* ---------- Prüfung der Eingaben ---------- */
 function str(v, max) { return typeof v === 'string' ? v.trim().slice(0, max) : ''; }
-/* Jedi Ermittler: Tarnidentitäten, Informanten, Gespräche (nur für Konten mit Ermittler-Freigabe) */
-const INV_SPEC = {
-  covers: { one: 'Tarnidentität', f: [
-    { k: 'n', l: 'Tarnname', max: 60, req: 1 },
-    { k: 'st', l: 'Status', max: 20, en: ['Aktiv', 'Ruhend', 'Verbrannt'], def: 'Aktiv' },
-    { k: 'loc', l: 'Einsatzort', max: 60 },
-    { k: 'bg', l: 'Legende', max: 2000 },
-    { k: 'note', l: 'Notiz', max: 1000 }] },
-  informants: { one: 'Informant', f: [
-    { k: 'n', l: 'Name oder Deckname', max: 60, req: 1 },
-    { k: 'rel', l: 'Zuverlässigkeit', max: 20, en: ['Unbekannt', 'Gering', 'Mittel', 'Hoch'], def: 'Unbekannt' },
-    { k: 'st', l: 'Status', max: 20, en: ['Aktiv', 'Inaktiv', 'Abgeschaltet'], def: 'Aktiv' },
-    { k: 'src', l: 'Zugang / Quelle', max: 120 },
-    { k: 'contact', l: 'Kontaktweg', max: 120 },
-    { k: 'loc', l: 'Ort', max: 60 },
-    { k: 'note', l: 'Notiz', max: 1000 }] },
-  talks: { one: 'Gespräch', f: [
-    { k: 'ti', l: 'Betreff', max: 120, req: 1 },
-    { k: 'when', l: 'Zeitpunkt', max: 30 },
-    { k: 'with', l: 'Gesprächspartner', max: 80 },
-    { k: 'cov', l: 'Tarnidentität', max: 60 },
-    { k: 'inf', l: 'Informant', max: 60 },
-    { k: 'loc', l: 'Ort', max: 60 },
-    { k: 'text', l: 'Gesprächsprotokoll', max: 8000, req: 1 }] }
-};
-function needInv(req) {
-  const u = need(req, 'viewer');
-  if (!u.inv) { const e = new Error('Dieser Bereich ist nur für berechtigte Ordensmitglieder freigegeben.'); e.status = 403; throw e; }
-  return u;
-}
-function cleanInv(kind, b) {
-  const o = {};
-  if (!b || typeof b !== 'object') { const e = new Error('Ungültige Daten.'); e.status = 400; throw e; }
-  INV_SPEC[kind].f.forEach(function (f) {
-    let x = str(b[f.k], f.max);
-    if (f.en) { if (x && f.en.indexOf(x) < 0) { const e = new Error('Ungültiger Wert bei „' + f.l + '“.'); e.status = 400; throw e; } if (!x) x = f.def; }
-    if (f.req && !x) { const e = new Error('„' + f.l + '“ fehlt.'); e.status = 400; throw e; }
-    o[f.k] = x;
-  });
-  return o;
-}
 /* Archiv: Machtfähigkeiten und Prüfungen (lesen alle normalen Konten, schreiben mit dem Recht „Archiv“) */
 const ARC_ICON_MAX = 60000; // Zeichen des Data-URL-Icons (die Seite verkleinert Bilder vorher auf 128x128)
 const ARC_SPEC = {
@@ -490,6 +447,10 @@ function cleanReport(b, partial) {
   if ('t' in b || !partial) { if (db.config.rtypes.indexOf(b.t) < 0) bad('Ungültige Art.'); o.t = b.t; }
   if ('cls' in b || !partial) { if (CLASSES.indexOf(b.cls) < 0) bad('Ungültige Geheimhaltungsstufe.'); o.cls = b.cls; }
   if ('body' in b || !partial) { o.body = str(b.body, 8000); if (!o.body) bad('Der Berichtstext fehlt.'); }
+  if ('ops' in b || !partial) { // angeheftete Expeditionen (IDs bestehender Operationen)
+    o.ops = [];
+    (Array.isArray(b.ops) ? b.ops : []).forEach(function (id) { id = String(id); if (db.ops[id] && o.ops.indexOf(id) < 0 && o.ops.length < 30) o.ops.push(id); });
+  }
   if ('extra' in b || !partial) {
     const ex = Array.isArray(b.extra) ? b.extra : [];
     if (ex.length > 20) bad('Höchstens 20 Zusatzfelder.');
@@ -675,9 +636,9 @@ function wiaOut(x, me, kinds) {
   return o;
 }
 function canDecl(u) { return !!u && !u.blocked && (u.role === 'owner' || !!u.decl); }
-const NAVKEYS = ['dashboard', 'register', 'berichte', 'karte', 'ops', 'auftraege', 'archiv', 'ermittler', 'logs', 'konto'];
+const NAVKEYS = ['dashboard', 'register', 'berichte', 'karte', 'ops', 'auftraege', 'archiv', 'logs', 'konto'];
 function cleanPrefs(b) {
-  const o = { accent: '', density: 'normal', nav: [], hide: [], theme: 'dark', bg: '', font: 'display', radius: 'normal', scale: 100, contrast: 'normal', stars: true, ticker: true, scan: true, calm: false, noboot: false, wide: false, start: '' };
+  const o = { accent: '', density: 'normal', nav: [], hide: [], theme: 'dark', bg: '', font: 'display', radius: 'normal', scale: 100, contrast: 'normal', stars: true, scan: true, calm: false, noboot: false, wide: false, start: '' };
   if (!b || typeof b !== 'object') return o;
   if (typeof b.bg === 'string' && /^#[0-9a-fA-F]{6}$/.test(b.bg)) o.bg = b.bg.toLowerCase();
   if (['dark', 'graphite', 'navy'].indexOf(b.theme) >= 0) o.theme = b.theme;
@@ -685,7 +646,7 @@ function cleanPrefs(b) {
   if (['square', 'normal', 'round'].indexOf(b.radius) >= 0) o.radius = b.radius;
   if (['normal', 'high'].indexOf(b.contrast) >= 0) o.contrast = b.contrast;
   if (typeof b.scale === 'number' && isFinite(b.scale)) o.scale = Math.max(80, Math.min(140, Math.round(b.scale)));
-  ['stars', 'ticker', 'scan'].forEach(function (k) { if (typeof b[k] === 'boolean') o[k] = b[k]; });
+  ['stars', 'scan'].forEach(function (k) { if (typeof b[k] === 'boolean') o[k] = b[k]; });
   ['calm', 'noboot', 'wide'].forEach(function (k) { if (typeof b[k] === 'boolean') o[k] = b[k]; });
   if (typeof b.start === 'string' && NAVKEYS.indexOf(b.start) >= 0) o.start = b.start;
   if (typeof b.accent === 'string' && /^#[0-9a-fA-F]{6}$/.test(b.accent)) o.accent = b.accent.toLowerCase();
@@ -694,7 +655,7 @@ function cleanPrefs(b) {
   if (Array.isArray(b.hide)) b.hide.forEach(function (k) { if (NAVKEYS.indexOf(k) >= 0 && k !== 'konto' && o.hide.indexOf(k) < 0) o.hide.push(k); });
   return o;
 }
-function publicUser(u) { return { name: u.name, display: dispName(u), role: u.role, label: u.groupLabel || (db.roles[u.role] || {}).label || u.role, perms: rolePerms(u), rank: rankOf(u.role), inv: !!u.inv, decl: canDecl(u), main: u.name === MAIN, mustChange: !!u.mustChange, expires: u.expires || 0, prefs: u.prefs || null }; }
+function publicUser(u) { return { name: u.name, display: dispName(u), role: u.role, label: u.groupLabel || (db.roles[u.role] || {}).label || u.role, perms: rolePerms(u), rank: rankOf(u.role), decl: canDecl(u), main: u.name === MAIN, mustChange: !!u.mustChange, expires: u.expires || 0, prefs: u.prefs || null }; }
 function cleanUntil(x) {
   const n = Number(x), now = Date.now();
   if (!isFinite(n) || n < now + 60000 || n > now + 400 * 86400000) { const e = new Error('Das Ablaufdatum muss zwischen 1 Minute und 400 Tagen in der Zukunft liegen.'); e.status = 400; throw e; }
@@ -1149,7 +1110,7 @@ async function api(req, res, url) {
   if (p === '/api/users' && method === 'GET') {
     const lu = need(req, 'viewer');
     if (!can(lu, 'accounts') && !can(lu, 'groups')) return send(res, 403, { error: 'Dafür fehlen dir die Rechte.' });
-    return send(res, 200, { roles: rolesList(), storage: REMOTE ? (remoteOk ? 'remote' : 'remote-error') : 'file', users: !can(lu, 'accounts') ? [] : Object.keys(db.users).sort(function (a, b) { const ua = db.users[a], ub = db.users[b]; return !!ub.untouchable - !!ua.untouchable || (b === MAIN) - (a === MAIN) || rankOf(ub.role) - rankOf(ua.role) || String(dispName(ua)).localeCompare(String(dispName(ub)), 'de'); }).map(function (k) { const u = db.users[k]; return { name: u.name, display: dispName(u), role: u.role, roleLabel: (db.roles[u.role] || {}).label, created: u.created, expires: u.expires || 0, blocked: !!u.blocked, inv: !!u.inv, decl: !!u.decl, untouchable: !!u.untouchable, groupLabel: u.groupLabel || '', main: u.name === MAIN, mustChange: !!u.mustChange }; }) });
+    return send(res, 200, { roles: rolesList(), storage: REMOTE ? (remoteOk ? 'remote' : 'remote-error') : 'file', users: !can(lu, 'accounts') ? [] : Object.keys(db.users).sort(function (a, b) { const ua = db.users[a], ub = db.users[b]; return !!ub.untouchable - !!ua.untouchable || (b === MAIN) - (a === MAIN) || rankOf(ub.role) - rankOf(ua.role) || String(dispName(ua)).localeCompare(String(dispName(ub)), 'de'); }).map(function (k) { const u = db.users[k]; return { name: u.name, display: dispName(u), role: u.role, roleLabel: (db.roles[u.role] || {}).label, created: u.created, expires: u.expires || 0, blocked: !!u.blocked, decl: !!u.decl, untouchable: !!u.untouchable, groupLabel: u.groupLabel || '', main: u.name === MAIN, mustChange: !!u.mustChange }; }) });
   }
   if (p === '/api/users' && method === 'POST') {
     const me = need(req, 'accounts');
@@ -1160,51 +1121,14 @@ async function api(req, res, url) {
     if (!db.roles[b.role]) return send(res, 400, { error: 'Ungültige Rolle.' });
     if (b.role === 'owner' && me.name !== MAIN) return send(res, 403, { error: 'Ordensleitungs-Konten legt nur das Haupt-Owner-Konto an.' });
     if (!canAssign(me, b.role)) return send(res, 403, { error: 'Du kannst nur Gruppen vergeben, deren Rechte du selbst hast.' });
-    if (b.inv && me.role !== 'owner') return send(res, 403, { error: 'Die Ermittler-Freigabe vergibt nur die Ordensleitung.' });
     let until = 0;
     if (b.until) { if (b.role === 'owner') return send(res, 400, { error: 'Ordensleitungs-Konten können nicht befristet werden.' }); until = cleanUntil(b.until); }
     const pw = genPassword();
     db.users[name] = { name: name, display: display, role: b.role, hash: hashPw(pw), created: new Date().toISOString(), since: Date.now(), mustChange: true };
     if (until) db.users[name].expires = until;
-    if (b.inv) db.users[name].inv = true;
-    logAct(me, 'Konto angelegt', display + ' (' + ((db.roles[b.role] || {}).label || b.role) + (until ? ', befristet bis ' + untilTxt(until) : '') + (b.inv ? ', Jedi Ermittler' : '') + ')');
+    logAct(me, 'Konto angelegt', display + ' (' + ((db.roles[b.role] || {}).label || b.role) + (until ? ', befristet bis ' + untilTxt(until) : '') + ')');
     save();
     return send(res, 200, { ok: true, username: display, password: pw });
-  }
-  if (p === '/api/inv' && method === 'GET') {
-    needInv(req);
-    const out = {};
-    Object.keys(INV_SPEC).forEach(function (k) {
-      out[k] = Object.keys(db.inv[k]).map(function (id) { const x = db.inv[k][id]; return Object.assign({ id: id }, x, { by: authorId(x.bk, x.by) }); }).sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
-    });
-    return send(res, 200, out);
-  }
-  m = /^\/api\/inv\/(covers|informants|talks)(?:\/([a-f0-9]{6,20}))?$/.exec(p);
-  if (m) {
-    const iu = needInv(req), kind = m[1], one = INV_SPEC[kind].one;
-    if (!m[2] && method === 'POST') {
-      if (Object.keys(db.inv[kind]).length >= 500) return send(res, 400, { error: 'Zu viele Einträge.' });
-      const o = cleanInv(kind, await readBody(req));
-      const id = newId();
-      Object.assign(o, { ts: Date.now(), by: dispName(iu), bk: iu.name });
-      db.inv[kind][id] = o;
-      logAct(iu, 'Ermittler: ' + one + ' angelegt', ''); // bewusst ohne Inhalt: Logs sehen auch Konten ohne Ermittler-Freigabe
-      bump();
-      return send(res, 200, { ok: true, id: id });
-    }
-    const cur = m[2] ? db.inv[kind][m[2]] : null;
-    if (m[2] && !cur) return send(res, 404, { error: one + ' nicht gefunden.' });
-    if (cur && (method === 'PATCH' || method === 'DELETE')) {
-      if (cur.bk !== iu.name && !can(iu, 'others')) return send(res, 403, { error: 'Fremde Einträge ändern nur Konten mit dem Recht „Fremde Inhalte“.' });
-      if (method === 'PATCH') {
-        Object.assign(cur, cleanInv(kind, await readBody(req)), { edited: Date.now() });
-        logAct(iu, 'Ermittler: ' + one + ' geändert', ''); bump();
-        return send(res, 200, { ok: true });
-      }
-      delete db.inv[kind][m[2]];
-      logAct(iu, 'Ermittler: ' + one + ' gelöscht', ''); bump();
-      return send(res, 200, { ok: true });
-    }
   }
   /* Archiv: Machtfähigkeiten und Prüfungen */
   if (p === '/api/archive' && method === 'GET') {
@@ -1291,11 +1215,6 @@ async function api(req, res, url) {
         const nb = !!b.blocked;
         if (nb && u.name === me.name) return send(res, 400, { error: 'Du kannst dein eigenes Konto nicht sperren.' });
         if (nb !== !!u.blocked) { if (nb) { u.blocked = true; u.since = Date.now(); } else delete u.blocked; uch.push(nb ? 'gesperrt' : 'entsperrt'); }
-      }
-      if ('inv' in b) {
-        if (me.role !== 'owner') return send(res, 403, { error: 'Die Ermittler-Freigabe vergibt nur die Ordensleitung.' });
-        const ni = !!b.inv;
-        if (ni !== !!u.inv) { if (ni) u.inv = true; else delete u.inv; uch.push(ni ? 'Jedi Ermittler freigegeben' : 'Ermittler-Freigabe entzogen'); }
       }
       if ('decl' in b) {
         if (me.role !== 'owner') return send(res, 403, { error: 'Die Deklassifizierungs-Freigabe vergibt nur die Ordensleitung.' });
