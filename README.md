@@ -103,12 +103,11 @@ Lesen dürfen alle Konten. Eintragen, ändern und löschen geht mit dem neuen Gr
 ## Notfall UMBRA (Dialogkette)
 „Notfall vorbereiten“ öffnet drei Fenster: Hinweis (GITs nötig) → Bestätigung mit deinem Namen → Meldung „/git <Name> autorisiert Notfallprotokoll Umbra und sperrt die Jedi Datenbank …“. Erst bei „Sicher“ wird gesperrt. Die Scan-Funktion bei den Planeten wurde entfernt.
 
-## Berichte deklassifizieren
-- Die Jedi Leitung vergibt unter Konten den Knopf „Deklassifizieren erlauben“ (Jedi Leitung darf immer).
-- Im Bericht: „Deklassifizieren“ → der Deklassifizierer legt ein Passwort (8–100 Zeichen) fest und erhält den Link `/d/<Token>`.
-- Abruf nur mit Link UND Passwort (öffentliche Seite `public/d.html`, ohne Anhänge, Schwärzungen aufgehoben, Stand eingefroren). Widerruf jederzeit; beim Löschen des Berichts erlischt der Link. Falsche Versuche werden begrenzt, bei Notfall UMBRA ist der Abruf gesperrt. Passwörter stehen nie in den Logs.
+## Berichte freigeben
+- Die Jedi Leitung vergibt unter Konten den Knopf „Freigeben erlauben“ (Jedi Leitung darf immer).
+- Im Bericht: „Freigeben“ → legt der Freigebende ein Passwort (8–100 Zeichen) fest und erhält den Link `/d/<Token>`.
+- Abruf nur mit Link UND Passwort (öffentliche Seite `public/d.html`, ohne Anhänge, Stand eingefroren). Widerruf jederzeit; beim Löschen des Berichts erlischt der Link. Falsche Versuche werden begrenzt, bei Notfall UMBRA ist der Abruf gesperrt. Passwörter stehen nie in den Logs.
 
-**Schwärzungspflicht:** Wer nicht zur Jedi Leitung gehört, muss einen Bericht beim Deklassifizieren eigenhändig schwärzen (mindestens eine Stelle in [[doppelten Klammern]], Text sonst unverändert). Die geschwärzten Stellen erscheinen öffentlich als ████████. Nur die Jedi Leitung darf ohne Schwärzung deklassifizieren.
 
 **Karte:** Mausrad zoomt die Galaxis Karte (bis 8x) zum Mauszeiger, mit gedrückter Maus verschiebt man den Ausschnitt, Doppelklick setzt zurück. Bei normaler Größe scrollt das Rad weiter die Seite.
 **Karte erweitern:** Herauszoomen (bis 0,25x) zeigt freien Raum rund um die Karte; im Bearbeitungsmodus lassen sich Systeme auch außerhalb des bisherigen Rahmens setzen (gestrichelter Rahmen = ursprünglicher Bereich).
@@ -134,10 +133,8 @@ Lesen dürfen alle Konten. Eintragen, ändern und löschen geht mit dem neuen Gr
 **Einstellungen (pro Konto):** Der Reiter „Einstellungen“ steht immer ganz unten. Jedes Konto wählt für sich die Farbe (Vorgaben oder eigene), die Darstellung (Minimalistisch, Normal, Groß) sowie Reihenfolge und Sichtbarkeit der Reiter. Die Werte werden am Konto gespeichert und gelten auf jedem Gerät.
 
 ## Zusatzfelder bei Berichten
-Beim Erstellen/Bearbeiten eines Berichts können bis zu 20 Zusatzfelder mit selbst gewähltem Titel hinzugefügt werden ("+ Zusatzfeld hinzufügen"). Sie erscheinen in der Akte unter den Kopfdaten. `[[...]]` wird auch dort geschwärzt. Bei Deklassifizierung werden Zusatzfelder nur veröffentlicht, wenn die Jedi Leitung deklassifiziert; bei anderen Deklassifizierenden werden sie nicht veröffentlicht.
+Beim Erstellen/Bearbeiten eines Berichts können bis zu 20 Zusatzfelder mit selbst gewähltem Titel hinzugefügt werden ("+ Zusatzfeld hinzufügen"). Sie erscheinen in der Akte unter den Kopfdaten. Bei der Freigabe werden sie mitveröffentlicht.
 
-### Schwärzen-Knopf & Zusatzfelder deklassifizieren
-Im Deklassifizieren-Formular Text im Berichtstext oder in einem Zusatzfeld markieren und auf „▮ Schwärzen“ klicken (setzt `[[…]]`). „Schwärzung aufheben“ entfernt sie wieder. Zusatzfelder werden jetzt für alle Deklassifizierenden veröffentlicht, mit denselben Schwärzungen; ihr Inhalt darf dabei nicht verändert werden.
 
 ## Mehr Anpassungen (Einstellungen)
 Pro Konto einstellbar: Farbwelt (Schwarz, Graphit, Nachtblau), hoher Kontrast, Schriftart (Chakra Petch, Systemschrift, Monospace), Größe 80–140 %, Ecken (eckig, normal, rund), Effekte einzeln (Sternenhimmel, Scanlinien, Animationen reduzieren, volle Breite, Start-Animation überspringen), Startseite nach der Anmeldung, sowie „Alle Einstellungen zurücksetzen“. Gespeichert am Konto (`/api/prefs`).
@@ -146,7 +143,7 @@ Pro Konto einstellbar: Farbwelt (Schwarz, Graphit, Nachtblau), hoher Kontrast, S
 Akzentfarbe (Farbfeld oder Hex-Wert) färbt jetzt Kopfzeilen, Knöpfe, Rahmen, Auswahlfelder und Schein; die Hintergrundfarbe ist frei wählbar (`bg`), Flächen und Rahmen leiten sich davon ab.
 
 ## Entfernt
-- **Wächter ID / Ordensmitglied ID:** gibt es nicht mehr. Konten haben nur noch einen Namen; Autoren, Deklassifizierer und Logs zeigen den Namen. Alte IDs werden beim Start aus den gespeicherten Daten gelöscht.
+- **Wächter ID / Ordensmitglied ID:** gibt es nicht mehr. Konten haben nur noch einen Namen; Autoren und Logs zeigen den Namen. Alte IDs werden beim Start aus den gespeicherten Daten gelöscht.
 - **KoS (Kill on Sight):** Funktion, Tab, Banner, Zähler und Dokumentationsart „Eliminierung“ sind entfernt. Alte KoS-Daten werden beim Start gelöscht (bereits geschriebene Dokumentationen der Art „Eliminierung“ bei Aufträgen bleiben lesbar).
 - **RIS Kooperation:** Reiter, Berichtsaustausch, RIS-Konten und das Gruppenrecht „RIS Kooperation“ sind entfernt. Alte RIS-Konten und -Berichte werden beim Start gelöscht.
 - „Wächter“ heißt überall „Jedi“ (z. B. „Jedi Datenbank“, „JiA“ = Jedi im Auftrag).
@@ -157,3 +154,4 @@ Akzentfarbe (Farbfeld oder Hex-Wert) färbt jetzt Kopfzeilen, Knöpfe, Rahmen, A
 - **Beschatten:** Funktion, Recht, Tab „Beschattungen“, Dashboard-Karte, Labels und Banner sind entfernt. Alte Beschattungsdaten werden beim Start gelöscht.
 - **Logo:** Das frühere Halbmond-Emblem ist überall durch das Jedi-Ordens-Logo (wie das Seiten-Icon) ersetzt.
 - **Archiv-Look:** Pergament- und Lampenlicht-Farben, Serifenschrift (Cormorant Garamond, Source Serif, Courier Prime über Google Fonts), Katalogkarten-Rahmen, Staubpartikel statt Sternen, Papierkorn. Die Effekte lassen sich unter Jedi-Identität abschalten.
+- **Schwärzen:** Funktion komplett entfernt (Schwärzungspflicht, Schwärzen-Knopf, „Schwärzungen aufheben“, `[[…]]`). Freigegebene Berichte erscheinen vollständig; vorhandene `[[…]]`-Markierungen werden beim Freigeben nur entfernt.

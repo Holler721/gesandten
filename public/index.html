@@ -229,8 +229,6 @@ td .mini i{display:block;height:100%}
 
 .reader h3{margin:0;font-size:20px;line-height:1.2}
 .reader p{margin:0;color:#e0e0e0;max-width:62ch}
-.rx{background:#262626;color:transparent;border-radius:3px;user-select:none;transition:background .4s,color .4s}
-.reader.open .rx{background:rgba(251,77,109,.16);color:#ffb3c1;user-select:auto}
 
 .feed{display:flex;flex-direction:column;gap:8px;max-height:520px;overflow-y:auto;padding-right:4px}
 .feed .item{animation:rise .3s ease}
@@ -728,7 +726,7 @@ function clone(o){return JSON.parse(JSON.stringify(o))}
 function num(v,d){v=+v;return isFinite(v)?v:d}
 
 /* ---------- Einzelrechte ---------- */
-var PL=[['persons','Personen','Personen anlegen, ändern, entfernen'],['files','Akten','Akten bei Personen schreiben'],['reports','Berichte','Berichte schreiben und Anhänge hinzufügen'],['opsStart','Op. starten','Operationen starten'],['opsManage','Op. steuern','Operationen vorantreiben, umbenennen, Sichtbarkeit, abbrechen, archivieren'],['map','Karte','Galaxis Karte bearbeiten'],['others','Fremde Inhalte','Fremde Berichte, Akten und Anhänge ändern, deklassifizieren'],['config','Anpassung','Ränge, Labels und Berichtsarten ändern'],['lockdown','Notfall','UMBRA auslösen/beenden; bleibt bei UMBRA freigeschaltet'],['open','Offen lesen','Berichte der Stufe Offen lesen'],['intern','Intern lesen','Berichte der Stufe Intern lesen'],['secret','Vertraulich lesen','Berichte der Stufen Vertraulich und Geheim lesen'],['logs','Logs','Protokoll sehen: wer hat wann was gemacht'],['accounts','Konten','Konten anlegen, Kollegium zuweisen, Passwort zurücksetzen, löschen (nur mit Gruppen, deren Rechte man selbst hat)'],['groups','Gruppen','Kollegien und Befugnisse verwalten (nur Rechte, die man selbst hat)'],['archive','Archiv','Im Archiv Machtfähigkeiten und Aufgaben eintragen (lesen dürfen alle)']];
+var PL=[['persons','Personen','Personen anlegen, ändern, entfernen'],['files','Akten','Akten bei Personen schreiben'],['reports','Berichte','Berichte schreiben und Anhänge hinzufügen'],['opsStart','Op. starten','Operationen starten'],['opsManage','Op. steuern','Operationen vorantreiben, umbenennen, Sichtbarkeit, abbrechen, archivieren'],['map','Karte','Galaxis Karte bearbeiten'],['others','Fremde Inhalte','Fremde Berichte, Akten und Anhänge ändern, freigeben'],['config','Anpassung','Ränge, Labels und Berichtsarten ändern'],['lockdown','Notfall','UMBRA auslösen/beenden; bleibt bei UMBRA freigeschaltet'],['open','Offen lesen','Berichte der Stufe Offen lesen'],['intern','Intern lesen','Berichte der Stufe Intern lesen'],['secret','Vertraulich lesen','Berichte der Stufen Vertraulich und Geheim lesen'],['logs','Logs','Protokoll sehen: wer hat wann was gemacht'],['accounts','Konten','Konten anlegen, Kollegium zuweisen, Passwort zurücksetzen, löschen (nur mit Gruppen, deren Rechte man selbst hat)'],['groups','Gruppen','Kollegien und Befugnisse verwalten (nur Rechte, die man selbst hat)'],['archive','Archiv','Im Archiv Machtfähigkeiten und Aufgaben eintragen (lesen dürfen alle)']];
 var WRITE_P={persons:1,files:1,reports:1,opsStart:1},MANAGE_P={opsManage:1,map:1,others:1,config:1,lockdown:1};
 function P(k){if(S.hosted&&H.user)return !!(H.user.perms&&H.user.perms[k]);return WRITE_P[k]?!!S.canWrite:MANAGE_P[k]?!!S.canMap:false}
 
@@ -1231,7 +1229,6 @@ function seedDefaults(){
 }
 
 /* ---------- Berichte ---------- */
-function rx(s){return esc(s).replace(/\[\[(.+?)\]\]/g,'<span class="rx">$1</span>')}
 function clsTag(c){return '<span class="tag '+String(c).toLowerCase()+'">'+esc(c)+'</span>'}
 function docItem(d,i){return '<button class="item" data-doc="'+i+'"><div class="r1"><span><span class="tag '+tagCls(d.t)+'">'+esc(d.t)+'</span> '+clsTag(d.cls)+'</span><span class="dt">'+esc(d.d)+'</span></div><div class="ti">'+esc(d.ti)+'</div><div class="by">'+esc(d.byName||d.by)+(d.files&&d.files.length?' · '+d.files.length+(d.files.length===1?' Anhang':' Anhänge'):'')+'</div></button>'}
 function repById(id){for(var i=0;i<S.reports.length;i++)if(S.reports[i].id===id)return S.reports[i];return null}
@@ -1268,19 +1265,18 @@ function renderReports(){
      '<div class="field"><label for="rC">GEHEIMHALTUNGSSTUFE</label><select id="rC">'+CLASSES.filter(function(c){return !S.hosted||P(CLSP[c])}).map(function(c){return '<option'+((d?d.cls:'Intern')===c?' selected':'')+'>'+c+'</option>'}).join('')+'</select>'+
        '<span class="muted" style="font-size:12px">Wer welche Stufe lesen darf, legt die Ordensleitung unter Konto → Kollegien und Befugnisse fest (Offen lesen, Intern lesen, Vertraulich lesen).</span></div>'+
      '<div class="field"><label for="rB">TEXT</label><textarea id="rB" maxlength="8000" required>'+esc(d?d.body:'')+'</textarea>'+
-       '<span class="muted" style="font-size:12px">Leerzeile = neuer Absatz. Stellen in [[doppelten Klammern]] werden geschwärzt.</span></div>'+
+       '<span class="muted" style="font-size:12px">Leerzeile = neuer Absatz.</span></div>'+
      '<div class="field"><label>EXPEDITIONEN ANHEFTEN</label><div id="rOps" style="display:grid;gap:6px">'+(ops.length?ops.map(function(o,i){var k=String(opKey(o,i));return '<label class="prchk"><input type="checkbox" class="rop" value="'+esc(k)+'"'+((d&&(d.ops||[]).indexOf(k)>=0)?' checked':'')+'> <span>'+esc(o.n)+' <span class="muted">· '+num(o.p,0)+' %</span></span></label>'}).join(''):'<span class="muted" style="font-size:12px">Es gibt noch keine Expeditionen.</span>')+'</div><span class="muted" style="font-size:12px">Die ausgewählten Expeditionen werden am Bericht angezeigt.</span></div>'+
-     '<div class="field"><label>ZUSATZFELDER (EIGENER TITEL)</label><div id="xList" style="display:grid;gap:8px">'+((d&&d.extra)||[]).map(xRow).join('')+'</div><div><button class="btn sm ghost" type="button" data-act="xadd">+ Zusatzfeld hinzufügen</button></div><span class="muted" style="font-size:12px">Eigene Felder mit selbst gewähltem Titel, z. B. Einsatzort, Zeugen, Beteiligte, Ergebnis. Stellen in [[doppelten Klammern]] werden auch hier geschwärzt.</span></div>'+
+     '<div class="field"><label>ZUSATZFELDER (EIGENER TITEL)</label><div id="xList" style="display:grid;gap:8px">'+((d&&d.extra)||[]).map(xRow).join('')+'</div><div><button class="btn sm ghost" type="button" data-act="xadd">+ Zusatzfeld hinzufügen</button></div><span class="muted" style="font-size:12px">Eigene Felder mit selbst gewähltem Titel, z. B. Einsatzort, Zeugen, Beteiligte, Ergebnis.</span></div>'+
      '<div class="rtools"><button class="btn" type="submit">Speichern</button><button class="btn ghost" type="button" data-act="rCancel">Abbrechen</button></div></form>';
     return;
   }
   var d2=S.rep?repById(S.rep):null;
   if(!d2){rd.innerHTML='<p class="muted">'+(S.reports.length?'Wähle links einen Bericht.':'Hier erscheint der Bericht, den du auswählst.')+'</p>';return}
-  var open=rd.classList.contains('open'),tools='';
-  if(d2.body.indexOf('[[')>=0&&P('others'))tools+='<button class="btn sm" data-act="declass">'+(open?'Wieder schwärzen':'Schwärzungen aufheben')+'</button>';
-  if(H.user&&H.user.decl)tools+='<button class="btn sm" data-act="dcOpen">'+(d2.dc?'Deklassifizierung verwalten':'Deklassifizieren')+'</button>';
+  var tools='';
+  if(H.user&&H.user.rel)tools+='<button class="btn sm" data-act="dcOpen">'+(d2.dc?'Freigabe verwalten':'Freigeben')+'</button>';
   if(canEditRep(d2))tools+='<button class="btn sm" data-act="rEdit">Bearbeiten</button><button class="btn sm danger" data-act="rDel">'+(S.confirmRep===d2.id?'Wirklich löschen?':'Löschen')+'</button>';
-  rd.innerHTML=wdos({kick:'BERICHT · '+String(d2.t).toUpperCase(),tag:d2.cls,title:d2.ti,no:wno(d2.id),ts:d2.ts,meta:[['Autor',d2.byName||d2.by],['Art',d2.t]].concat(d2.edited?[['Bearbeitet',d2.edited]]:[]),rows:(d2.extra||[]).map(function(x){return [x.k,x.v,true]}),text:d2.body,rx:true})+(tools?'<div class="rtools">'+tools+'</div>':'')+opsAttHtml(d2)+dcBox(d2)+repFilesHtml(d2);
+  rd.innerHTML=wdos({kick:'BERICHT · '+String(d2.t).toUpperCase(),tag:d2.cls,title:d2.ti,no:wno(d2.id),ts:d2.ts,meta:[['Autor',d2.byName||d2.by],['Art',d2.t]].concat(d2.edited?[['Bearbeitet',d2.edited]]:[]),rows:(d2.extra||[]).map(function(x){return [x.k,x.v,true]}),text:d2.body})+(tools?'<div class="rtools">'+tools+'</div>':'')+opsAttHtml(d2)+dcBox(d2)+repFilesHtml(d2);
 }
 function opsAttHtml(d){
   var ids=(d.ops||[]),h=ids.map(function(id){var o=null;ops.forEach(function(x,i){if(String(opKey(x,i))===String(id))o=x});
@@ -1290,36 +1286,28 @@ function opsAttHtml(d){
 function dcLink(d){return d.dc&&d.dc.token?location.origin+'/d/'+d.dc.token:''}
 function dcBox(d){
   var h2='';
-  if(d.dc)h2+='<div class="chip cyan" style="margin-top:10px">Deklassifiziert durch '+esc(d.dc.by)+'</div>';
-  if(S.dcForm!==d.id||!(H.user&&H.user.decl))return h2;
+  if(d.dc)h2+='<div class="chip cyan" style="margin-top:10px">Freigegeben durch '+esc(d.dc.by)+'</div>';
+  if(S.dcForm!==d.id||!(H.user&&H.user.rel))return h2;
   var lk=dcLink(d);
-  return h2+'<div class="rform" style="margin-top:12px;padding:12px;border:1px solid var(--line2);display:grid;gap:8px"><b>Deklassifizierung</b>'+
-   '<span class="muted" style="font-size:12px">Der Bericht wird (ohne Anhänge) unter einem Link bereitgestellt. Abrufbar nur mit Link UND dem Passwort, das du jetzt festlegst. Der Stand wird beim Deklassifizieren eingefroren.</span>'+
-   '<div class="rtools"><button class="btn sm" type="button" data-act="dcBlack">▮ Schwärzen</button><button class="btn sm ghost" type="button" data-act="dcUnblack">Schwärzung aufheben</button><span class="muted" style="font-size:12px">Text im Feld mit der Maus markieren (Linksklick und ziehen), dann „Schwärzen“ klicken.</span></div>'+
-   '<div class="field"><label for="dcBody">BERICHTSTEXT</label><textarea id="dcBody" class="dcT" maxlength="8000" rows="8">'+esc(d.body)+'</textarea><span class="muted" style="font-size:12px">'+(H.user.role==='owner'?'Optional für die Ordensleitung: Stellen in [[doppelten Klammern]] werden im öffentlichen Bericht geschwärzt, ohne Klammern bleibt alles lesbar.':'Pflicht: Jeder Bericht, der nicht von der Ordensleitung deklassifiziert wird, muss eigenhändig geschwärzt werden. Setze die zu schwärzenden Stellen in [[doppelte Klammern]] (mindestens eine). Der Text selbst darf nicht verändert werden.')+'</span></div>'+
-   ((d.extra||[]).length?'<div class="field"><label>ZUSATZFELDER</label><div id="dcEx" style="display:grid;gap:8px">'+d.extra.map(function(x,i){return '<div><input type="text" class="dcT dcExK" maxlength="60" value="'+esc(x.k)+'"><textarea class="dcT dcExV" maxlength="2000" rows="2">'+esc(x.v)+'</textarea></div>'}).join('')+'</div></div>':'')+
+  return h2+'<div class="rform" style="margin-top:12px;padding:12px;border:1px solid var(--line2);display:grid;gap:8px"><b>Bericht freigeben</b>'+
+   '<span class="muted" style="font-size:12px">Der Bericht wird (ohne Anhänge) unter einem Link bereitgestellt. Abrufbar nur mit Link UND dem Passwort, das du jetzt festlegst. Der Stand wird beim Freigeben eingefroren.</span>'+
    (lk?'<div class="field"><label>LINK</label><input type="text" readonly id="dcLink" value="'+esc(lk)+'"></div>':'')+
    '<div class="field"><label for="dcPw">PASSWORT (8–100 Zeichen, legst du fest)</label><input type="text" id="dcPw" minlength="8" maxlength="100" autocomplete="off" placeholder="neues Passwort für diesen Bericht"></div>'+
-   '<div class="rtools"><button class="btn sm" data-act="dcSave">'+(d.dc?'Neues Passwort setzen / Stand erneuern':'Deklassifizieren')+'</button>'+(lk?'<button class="btn sm ghost" data-act="dcCopy">Link kopieren</button>':'')+(d.dc?'<button class="btn sm danger" data-act="dcRevoke">Widerrufen</button>':'')+'<button class="btn sm ghost" data-act="dcClose">Schließen</button></div></div>';
+   '<div class="rtools"><button class="btn sm" data-act="dcSave">'+(d.dc?'Neues Passwort setzen / Stand erneuern':'Freigeben')+'</button>'+(lk?'<button class="btn sm ghost" data-act="dcCopy">Link kopieren</button>':'')+(d.dc?'<button class="btn sm danger" data-act="dcRevoke">Widerrufen</button>':'')+'<button class="btn sm ghost" data-act="dcClose">Schließen</button></div></div>';
 }
 $('#rTabs').addEventListener('click',function(e){var b=e.target.closest('[data-tab]');if(b){S.tab=b.dataset.tab;renderReports()}});
 $('#rList').addEventListener('click',function(e){var b=e.target.closest('[data-rep]');if(b){S.rep=b.dataset.rep;S.repEdit=null;S.rfEdit=null;S.confirmRep=null;$('#reader').classList.remove('open');renderReports()}});
 $('#rNew').addEventListener('click',function(){if(!P('reports'))return;S.repEdit={id:null};renderReports();var t=$('#rTi');if(t)t.focus()});
-$('#reader').addEventListener('focusin',function(e){if(e.target.classList&&e.target.classList.contains('dcT'))S.dcLast=e.target});
-$('#reader').addEventListener('mousedown',function(e){var b=e.target.closest('[data-act=dcBlack],[data-act=dcUnblack]');if(b)e.preventDefault()});
 $('#reader').addEventListener('click',function(e){
   var b=e.target.closest('[data-act]');if(!b)return;var a=b.dataset.act,d=S.rep?repById(S.rep):null;if(a==='goOp'){go('ops');return}
-  if(a==='declass'){var r=$('#reader');r.classList.toggle('open');toast(r.classList.contains('open')?'Freigabe erteilt: Schwärzungen aufgehoben.':'Schwärzungen wiederhergestellt.',r.classList.contains('open')?'cyan':'');renderReports();return}
   if(a==='xadd'){var xl=$('#xList');if(xl.children.length>=20){toast('Höchstens 20 Zusatzfelder.','red');return}xl.insertAdjacentHTML('beforeend',xRow());var ks=xl.querySelectorAll('.xk');ks[ks.length-1].focus();return}
   if(a==='xdel'){var xr=b.closest('.xrow');if(xr)xr.remove();return}
   if(a==='dcOpen'){S.dcForm=S.dcForm===(d&&d.id)?null:(d&&d.id);renderReports();return}
-  if(a==='dcBlack'||a==='dcUnblack'){var ta=S.dcLast&&document.body.contains(S.dcLast)?S.dcLast:$('#dcBody');var s0=ta.selectionStart,e0=ta.selectionEnd;if(s0===e0){toast('Erst Text im Feld markieren.','red');return}var sel=ta.value.slice(s0,e0);var ns=a==='dcBlack'?'[['+sel.replace(/\[\[|\]\]/g,'')+']]':sel.replace(/\[\[|\]\]/g,'');var before=ta.value.slice(0,s0),after=ta.value.slice(e0);if(a==='dcUnblack'){var ob=before.lastIndexOf('[['),cb=before.lastIndexOf(']]');if(ob>cb&&after.indexOf(']]')>=0&&(after.indexOf('[[')<0||after.indexOf(']]')<after.indexOf('[['))){before=before.slice(0,ob)+before.slice(ob+2);after=after.replace(']]','')}}ta.value=before+ns+after;ta.focus();ta.setSelectionRange(before.length,before.length+ns.length);return}
   if(a==='dcClose'){S.dcForm=null;renderReports();return}
   if(a==='dcCopy'){var lk=dcLink(d);if(navigator.clipboard)navigator.clipboard.writeText(lk).then(function(){toast('Link kopiert.','cyan')},function(){toast('Kopieren nicht möglich.','red')});return}
   if(a==='dcSave'&&d){var pw=$('#dcPw').value;if(pw.length<8){toast('Das Passwort braucht mindestens 8 Zeichen.','red');return}
-    var db2=$('#dcBody').value;if(H.user.role!=='owner'&&db2.indexOf('[[')<0){toast('Bitte zuerst eigenhändig schwärzen: mindestens eine Stelle in [[Klammern]] setzen.','red');return}
-    var exs=[];$$('#dcEx>div').forEach(function(r){exs.push({k:r.querySelector('.dcExK').value,v:r.querySelector('.dcExV').value})});api('POST','/api/reports/'+encodeURIComponent(d.id)+'/declassify',{password:pw,body:db2,extra:exs}).then(function(){toast('Bericht deklassifiziert. Link und Passwort einzeln weitergeben.','cyan');return loadData(true)}).then(function(){renderReports()}).catch(apiErr);return}
-  if(a==='dcRevoke'&&d){api('DELETE','/api/reports/'+encodeURIComponent(d.id)+'/declassify').then(function(){toast('Deklassifizierung widerrufen. Der Link ist ungültig.','red');S.dcForm=null;return loadData(true)}).then(function(){renderReports()}).catch(apiErr);return}
+    api('POST','/api/reports/'+encodeURIComponent(d.id)+'/release',{password:pw}).then(function(){toast('Bericht freigegeben. Link und Passwort einzeln weitergeben.','cyan');return loadData(true)}).then(function(){renderReports()}).catch(apiErr);return}
+  if(a==='dcRevoke'&&d){api('DELETE','/api/reports/'+encodeURIComponent(d.id)+'/release').then(function(){toast('Freigabe widerrufen. Der Link ist ungültig.','red');S.dcForm=null;return loadData(true)}).then(function(){renderReports()}).catch(apiErr);return}
   if(a==='rCancel'){S.repEdit=null;renderReports();return}
   if(!d)return;
   if(/^rf(new|edit|cancel|save|del)$/.test(a)){repFileAct(a,b,d);return}
@@ -1591,7 +1579,7 @@ var VIEWS={einstellungen:1,auftraege:1,dashboard:1,register:1,berichte:1,karte:1
 var ROM=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII','XIII','XIV','XV','XVI','XVII','XVIII','XIX','XX'];
 function dosSecs(t){var out=[],cur=null;String(t||'').split('\n').forEach(function(l){var m=/^##\s*(.+)$/.exec(l);if(m){cur={h:m[1].trim(),b:[]};out.push(cur)}else{if(!cur){if(!l.trim())return;cur={h:'Bericht',b:[]};out.push(cur)}cur.b.push(l)}});return out}
 function dosSecHtml(text,redact){
-  return dosSecs(text).map(function(s,i){return '<section class="dosSec"><span class="dosNr">'+(ROM[i]||i+1)+'</span><div><h4>'+esc(s.h.toUpperCase())+'</h4>'+s.b.join('\n').split(/\n{2,}/).filter(function(p){return p.trim()}).map(function(p){var t=p.trim();return '<p>'+(redact?rx(t):esc(t)).replace(/\n/g,'<br>')+'</p>'}).join('')+'</div></section>'}).join('')}
+  return dosSecs(text).map(function(s,i){return '<section class="dosSec"><span class="dosNr">'+(ROM[i]||i+1)+'</span><div><h4>'+esc(s.h.toUpperCase())+'</h4>'+s.b.join('\n').split(/\n{2,}/).filter(function(p){return p.trim()}).map(function(p){var t=p.trim();return '<p>'+esc(t).replace(/\n/g,'<br>')+'</p>'}).join('')+'</div></section>'}).join('')}
 function wdos(o){
   var dt=o.ts?new Date(o.ts):null,meta=(o.meta||[]).slice();
   if(dt){meta.push(['Datum',dt.toLocaleDateString('de-DE')]);meta.push(['Uhrzeit',dt.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})])}
@@ -1599,15 +1587,15 @@ function wdos(o){
    '<header class="dosHd"><svg role="img" aria-label="Emblem" viewBox="0 0 64 64"><use href="#emb"/></svg><div><b>JEDI DATENBANK</b><small>INTERNES DOKUMENT · NUR FÜR BERECHTIGTE</small></div><div class="dosNo"><small>AKTEN-NR.</small><b>'+esc(o.no||'')+'</b><em>'+esc((o.tag||'INTERN').toUpperCase())+'</em></div></header>'+
    '<div class="dosKick">'+esc(o.kick)+'</div><h3 class="dosTi">'+esc(o.title)+'</h3>'+
    (meta.length?'<div class="dosMeta">'+meta.map(function(m){return '<div><small>'+esc(String(m[0]).toUpperCase())+'</small><b>'+esc(m[1]||'–')+'</b></div>'}).join('')+'</div>':'')+
-   (o.rows&&o.rows.length?'<div class="dosPers">'+o.rows.map(function(r){return '<div><small>'+esc(r[0].toUpperCase())+'</small><span style="white-space:pre-wrap;overflow-wrap:anywhere;text-align:left;justify-self:start">'+(r[2]?rx(r[1]):esc(r[1]))+'</span></div>'}).join('')+'</div>':'')+
-   dosSecHtml(o.text,o.rx)+'</article>';
+   (o.rows&&o.rows.length?'<div class="dosPers">'+o.rows.map(function(r){return '<div><small>'+esc(r[0].toUpperCase())+'</small><span style="white-space:pre-wrap;overflow-wrap:anywhere;text-align:left;justify-self:start">'+esc(r[1])+'</span></div>'}).join('')+'</div>':'')+
+   dosSecHtml(o.text)+'</article>';
 }
 function wno(id){var s=String(id||'x'),a=2166136261,b=5381,o='';
   for(var r=0;r<9;r++){for(var i=0;i<s.length;i++){a=Math.imul(a^s.charCodeAt(i)^r,16777619)>>>0;b=(Math.imul(b,33)^s.charCodeAt(i)+a)>>>0}o+=(a^b).toString(36).slice(-1)}
   return 'JA-'+o.toUpperCase()}
 function fdos(f,kick,tag,ctx,redact){
   var rows=[];if(ctx)rows.push([ctx[0],ctx[1]]);if(f.groups&&f.groups.length)rows.push(['Sichtbar für',visText(f.groups)]);
-  return wdos({kick:kick,tag:tag,title:f.title,no:wno(f.id),ts:f.ts,meta:[['Autor',f.byName||f.by||'–']],rows:rows,text:f.text,rx:redact})}
+  return wdos({kick:kick,tag:tag,title:f.title,no:wno(f.id),ts:f.ts,meta:[['Autor',f.byName||f.by||'–']],rows:rows,text:f.text})}
 /* ---------- Archiv: Machtfähigkeiten und Prüfungen ---------- */
 var AR={tab:'powers',data:{powers:[],tasks:[],write:false,others:false},edit:null,q:'',icon:'',iconDirty:false,leaders:[]};
 var ARK={
@@ -2000,10 +1988,10 @@ function renderKonto(){
       if(H.user.role!=='owner'&&u.role!=='owner'&&!canAssignC(u.role))return '<tr><td><b>'+esc(dn)+'</b></td><td>'+esc(RN(u.role))+'</td><td class="muted">höhere Rechte</td><td class="muted">nur Ordensleitung</td></tr>';
       if(u.role==='owner'&&!isMain)return '<tr><td><b>'+esc(dn)+'</b></td><td><span class="chip vio">'+RN('owner')+'</span></td><td class="muted">nur Haupt-Owner</td><td class="muted">nur Haupt-Owner</td></tr>';
       var opts=roles.map(function(r){return '<option value="'+r+'"'+(u.role===r?' selected':'')+'>'+RN(r)+'</option>'}).join('');
-      return '<tr data-u="'+esc(u.name)+'" data-b="'+(u.blocked?'1':'')+'" data-d="'+(u.decl?'1':'')+'"><td>'+nm+'</td>'+
+      return '<tr data-u="'+esc(u.name)+'" data-b="'+(u.blocked?'1':'')+'" data-d="'+(u.rel?'1':'')+'"><td>'+nm+'</td>'+
        '<td><select class="urole" aria-label="Rolle von '+esc(dn)+'">'+opts+'</select></td>'+
-       '<td class="muted">'+(u.mustChange?'wartet auf erste Anmeldung':'selbst gewählt')+(u.decl?'<div style="margin-top:4px"><span class="chip vio">Deklassifizierer</span></div>':'')+(u.blocked?'<div style="margin-top:4px"><span class="chip red">Gesperrt</span></div>':'')+(u.expires?'<div style="margin-top:4px"><span class="chip '+(u.expires<=Date.now()?'red':'vio')+'">'+(u.expires<=Date.now()?'abgelaufen seit ':'Temporär bis ')+esc(expTxt(u.expires))+'</span></div>':'')+'<select class="uexp" aria-label="Gültigkeit ändern" style="margin-top:6px"><option value="">Gültigkeit ändern …</option><option value="none">Unbefristet</option><option value="1h">1 Stunde ab jetzt</option><option value="24h">24 Stunden ab jetzt</option><option value="7d">7 Tage ab jetzt</option><option value="30d">30 Tage ab jetzt</option></select></td>'+
-       '<td><div class="acts">'+sv+''+(H.user.role==='owner'?(''+'<button class="btn sm ghost" data-uact="decl">'+(u.decl?'Deklassifizieren entziehen':'Deklassifizieren erlauben')+'</button>'):'')+'<button class="btn sm ghost" data-uact="block">'+(u.blocked?'Entsperren':'Sperren')+'</button><button class="btn sm" data-uact="pw">Neues Passwort erzeugen</button><button class="btn sm danger" data-uact="del">Löschen</button></div></td></tr>';
+       '<td class="muted">'+(u.mustChange?'wartet auf erste Anmeldung':'selbst gewählt')+(u.rel?'<div style="margin-top:4px"><span class="chip vio">Freigabeberechtigter</span></div>':'')+(u.blocked?'<div style="margin-top:4px"><span class="chip red">Gesperrt</span></div>':'')+(u.expires?'<div style="margin-top:4px"><span class="chip '+(u.expires<=Date.now()?'red':'vio')+'">'+(u.expires<=Date.now()?'abgelaufen seit ':'Temporär bis ')+esc(expTxt(u.expires))+'</span></div>':'')+'<select class="uexp" aria-label="Gültigkeit ändern" style="margin-top:6px"><option value="">Gültigkeit ändern …</option><option value="none">Unbefristet</option><option value="1h">1 Stunde ab jetzt</option><option value="24h">24 Stunden ab jetzt</option><option value="7d">7 Tage ab jetzt</option><option value="30d">30 Tage ab jetzt</option></select></td>'+
+       '<td><div class="acts">'+sv+''+(H.user.role==='owner'?(''+'<button class="btn sm ghost" data-uact="rel">'+(u.rel?'Freigeben entziehen':'Freigeben erlauben')+'</button>'):'')+'<button class="btn sm ghost" data-uact="block">'+(u.blocked?'Entsperren':'Sperren')+'</button><button class="btn sm" data-uact="pw">Neues Passwort erzeugen</button><button class="btn sm danger" data-uact="del">Löschen</button></div></td></tr>';
     }).join('');
   }).catch(apiErr);
 }
@@ -2019,7 +2007,7 @@ $('#uBody').addEventListener('click',function(e){
     api('PATCH','/api/users/'+encodeURIComponent(name),{display:$('.udisp',tr).value.trim()}).then(function(){toast('Konto gespeichert.','cyan');renderKonto();if(H.user&&H.user.name===name)loadData(true)}).catch(apiErr);
     return;
   }
-  if(a==='decl'){var nd=tr.dataset.d!=='1';api('PATCH','/api/users/'+encodeURIComponent(name),{decl:nd}).then(function(){toast(nd?'Darf jetzt Berichte deklassifizieren.':'Deklassifizierungs-Recht entzogen.',nd?'cyan':'red');renderKonto()}).catch(apiErr);return}
+  if(a==='rel'){var nd=tr.dataset.d!=='1';api('PATCH','/api/users/'+encodeURIComponent(name),{rel:nd}).then(function(){toast(nd?'Darf jetzt Berichte freigeben.':'Freigabe-Recht entzogen.',nd?'cyan':'red');renderKonto()}).catch(apiErr);return}
   if(a==='block'){var nb=tr.dataset.b!=='1';api('PATCH','/api/users/'+encodeURIComponent(name),{blocked:nb}).then(function(){toast(nb?'Konto gesperrt. Aktive Sitzungen sind beendet.':'Konto entsperrt.',nb?'red':'cyan');renderKonto()}).catch(apiErr);return}
   if(a==='pw'){
     api('PATCH','/api/users/'+encodeURIComponent(name),{reset:true}).then(function(j){showCred(j.username,j.password,'Neues Passwort erzeugt');renderKonto()}).catch(apiErr);

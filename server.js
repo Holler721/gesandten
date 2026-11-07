@@ -14,7 +14,7 @@ const PORT = Number(process.env.PORT) || 3000;
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 const INDEX_FILE = path.join(__dirname, 'public', 'index.html');
-const DECL_FILE = path.join(__dirname, 'public', 'd.html');
+const REL_FILE = path.join(__dirname, 'public', 'd.html');
 const TRUST_PROXY = process.env.TRUST_PROXY !== '0';
 const SESSION_MS = 12 * 60 * 60 * 1000;
 const COOKIE = 'sh_sess';
@@ -265,7 +265,9 @@ function normalizeDb() {
   });
   if (Array.isArray(db.logs)) db.logs.forEach(function (l) { if (isObj(l)) delete l.sid; });
   if (!isObj(db.lockdown)) db.lockdown = { active: false };
-  if (!isObj(db.declass)) db.declass = {};
+  if (isObj(db.declass) && !isObj(db.releases)) db.releases = db.declass; delete db.declass; // Altdaten übernehmen
+  Object.keys(db.users).forEach(function (k) { if (db.users[k].decl) { db.users[k].rel = true; } delete db.users[k].decl; });
+  if (!isObj(db.releases)) db.releases = {};
   if (!isObj(db.orders)) db.orders = {};
   if (!isObj(db.archive)) db.archive = {};
   ['powers', 'tasks'].forEach(function (k) { if (!isObj(db.archive[k])) db.archive[k] = {}; });
@@ -632,7 +634,7 @@ function wiaOut(x, me, kinds) {
   });
   return o;
 }
-function canDecl(u) { return !!u && !u.blocked && (u.role === 'owner' || !!u.decl); }
+function canRelease(u) { return !!u && !u.blocked && (u.role === 'owner' || !!u.rel); }
 const NAVKEYS = ['dashboard', 'register', 'berichte', 'karte', 'ops', 'auftraege', 'archiv', 'logs', 'konto'];
 function cleanPrefs(b) {
   const o = { accent: '', density: 'normal', nav: [], hide: [], theme: 'dark', bg: '', font: 'display', radius: 'normal', scale: 100, contrast: 'normal', stars: true, scan: true, calm: false, noboot: false, wide: false, start: '' };
@@ -652,7 +654,7 @@ function cleanPrefs(b) {
   if (Array.isArray(b.hide)) b.hide.forEach(function (k) { if (NAVKEYS.indexOf(k) >= 0 && k !== 'konto' && o.hide.indexOf(k) < 0) o.hide.push(k); });
   return o;
 }
-function publicUser(u) { return { name: u.name, display: dispName(u), role: u.role, label: u.groupLabel || (db.roles[u.role] || {}).label || u.role, perms: rolePerms(u), rank: rankOf(u.role), decl: canDecl(u), main: u.name === MAIN, mustChange: !!u.mustChange, expires: u.expires || 0, prefs: u.prefs || null }; }
+function publicUser(u) { return { name: u.name, display: dispName(u), role: u.role, label: u.groupLabel || (db.roles[u.role] || {}).label || u.role, perms: rolePerms(u), rank: rankOf(u.role), rel: canRelease(u), main: u.name === MAIN, mustChange: !!u.mustChange, expires: u.expires || 0, prefs: u.prefs || null }; }
 function cleanUntil(x) {
   const n = Number(x), now = Date.now();
   if (!isFinite(n) || n < now + 60000 || n > now + 400 * 86400000) { const e = new Error('Das Ablaufdatum muss zwischen 1 Minute und 400 Tagen in der Zukunft liegen.'); e.status = 400; throw e; }
@@ -681,13 +683,13 @@ async function api(req, res, url) {
       return send(res, 400, { error: 'Ungültige Anfrage.' });
     }
   }
-  if (p === '/api/public/declass' && method === 'POST') {
+  if (p === '/api/public/release' && method === 'POST') {
     const b = await readBody(req);
     const tok = typeof b.token === 'string' ? b.token.slice(0, 60) : '', pw = typeof b.password === 'string' ? b.password.slice(0, 100) : '';
     const ipk = 'dc:' + clientIp(req), tk = 'dct:' + tok;
     if (limited(ipk, 15) || limited(tk, 30)) return send(res, 429, { error: 'Zu viele Versuche. Bitte warte etwa 15 Minuten.' });
     if (db.lockdown.active) return send(res, 503, { error: 'Die Jedi Datenbank ist gerade gesperrt.' });
-    const e = /^[a-f0-9]{30}$/.test(tok) ? db.declass[tok] : null;
+    const e = /^[a-f0-9]{30}$/.test(tok) ? db.releases[tok] : null;
     if (!e || !pw || !checkPw(pw, e.hash)) { fail(ipk); fail(tk); return send(res, 403, { error: 'Link oder Passwort ungültig.' }); }
     return send(res, 200, { ti: e.ti, t: e.t, d: e.d, byName: e.byName, body: e.body, extra: Array.isArray(e.extra) ? e.extra : [], decName: e.decName, ts: e.ts });
   }
@@ -731,7 +733,7 @@ async function api(req, res, url) {
     const persons = Object.keys(db.persons).filter(function (id) { return canSee(me, db.persons[id]); })
       .map(function (id) { const x = db.persons[id]; return Object.assign({ id: id }, x, { files: (Array.isArray(x.files) ? x.files : []).filter(function (f) { return canSee(me, f); }).map(function (f) { return Object.assign({}, f, { byName: authorId(f.by, f.byName) }); }) }); })
       .sort(function (a, b) { return (a.ts || 0) - (b.ts || 0); });
-    const reports = Object.keys(db.reports).map(function (id) { const x = db.reports[id]; const dcT = Object.keys(db.declass).filter(function (t) { return db.declass[t].rid === id; })[0]; return Object.assign({ id: id }, x, { byName: authorId(x.by, x.byName), dc: dcT ? { by: db.declass[dcT].decName, ts: db.declass[dcT].ts, token: canDecl(me) ? dcT : undefined } : null }, { files: (Array.isArray(x.files) ? x.files : []).filter(function (f) { return canSee(me, f); }).map(function (f) { return Object.assign({}, f, { byName: authorId(f.by, f.byName) }); }) }); })
+    const reports = Object.keys(db.reports).map(function (id) { const x = db.reports[id]; const dcT = Object.keys(db.releases).filter(function (t) { return db.releases[t].rid === id; })[0]; return Object.assign({ id: id }, x, { byName: authorId(x.by, x.byName), dc: dcT ? { by: db.releases[dcT].decName, ts: db.releases[dcT].ts, token: canRelease(me) ? dcT : undefined } : null }, { files: (Array.isArray(x.files) ? x.files : []).filter(function (f) { return canSee(me, f); }).map(function (f) { return Object.assign({}, f, { byName: authorId(f.by, f.byName) }); }) }); })
       .filter(function (r) { return canRead(me, r.cls); })
       .sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
     const orders = Object.keys(db.orders).map(function (id) { const x = db.orders[id]; return { id: id, ti: x.ti, target: x.target, why: x.why, desc: x.desc, by: authorId(x.bk, x.by), mine: x.bk === me.name, ts: x.ts, edited: x.edited || 0, wia: wiaOut(x, me, ['order']), docs: docsOut(x, me, ['order']) }; })
@@ -962,52 +964,32 @@ async function api(req, res, url) {
     db.reports[id] = o; logAct(u, 'Bericht angelegt', o.t + ' · ' + o.cls + ': ' + o.ti); bump();
     return send(res, 200, { id: id });
   }
-  const dm = /^\/api\/reports\/([A-Za-z0-9_-]{1,40})\/declassify$/.exec(p);
+  const dm = /^\/api\/reports\/([A-Za-z0-9_-]{1,40})\/release$/.exec(p);
   if (dm) {
     const u = need(req, 'viewer');
     const cur = db.reports[dm[1]];
-    if (!canDecl(u)) return send(res, 403, { error: 'Dafür brauchst du die Freigabe zum Deklassifizieren (vergibt die Ordensleitung unter Konten).' });
+    if (!canRelease(u)) return send(res, 403, { error: 'Dafür brauchst du das Freigabe-Recht (vergibt die Ordensleitung unter Konten).' });
     if (!cur || !canRead(u, cur.cls)) return send(res, 404, { error: 'Bericht nicht gefunden.' });
-    const old = Object.keys(db.declass).filter(function (t) { return db.declass[t].rid === dm[1]; })[0];
+    const old = Object.keys(db.releases).filter(function (t) { return db.releases[t].rid === dm[1]; })[0];
     if (method === 'DELETE') {
-      if (!old) return send(res, 404, { error: 'Dieser Bericht ist nicht deklassifiziert.' });
-      delete db.declass[old]; logAct(u, 'Deklassifizierung widerrufen', cur.ti); bump();
+      if (!old) return send(res, 404, { error: 'Dieser Bericht ist nicht freigegeben.' });
+      delete db.releases[old]; logAct(u, 'Freigabe widerrufen', cur.ti); bump();
       return send(res, 200, { ok: true });
     }
     if (method === 'POST') {
       const b = await readBody(req);
       const pw = typeof b.password === 'string' ? b.password : '';
       if (pw.length < 8 || pw.length > 100) return send(res, 400, { error: 'Das Passwort muss 8 bis 100 Zeichen lang sein.' });
-      const strip = function (x) { return String(x || '').replace(/\[\[|\]\]/g, ''); };
-      let text;
-      if (typeof b.body === 'string' && b.body.trim()) {
-        if (strip(b.body).replace(/\s+/g, ' ').trim() !== strip(cur.body).replace(/\s+/g, ' ').trim()) return send(res, 400, { error: 'Beim Schwärzen darf der Text nicht verändert werden. Setze nur [[doppelte Klammern]] um die zu schwärzenden Stellen.' });
-        text = b.body.replace(/\[\[[\s\S]*?\]\]/g, '████████');
-        if (u.role !== 'owner' && text === b.body) return send(res, 400, { error: 'Du musst den Bericht eigenhändig schwärzen: Setze mindestens eine Stelle in [[doppelte Klammern]].' });
-      } else if (u.role !== 'owner') return send(res, 400, { error: 'Nur die Ordensleitung darf ohne Schwärzung deklassifizieren. Du musst den Bericht eigenhändig schwärzen.' });
-      else text = String(cur.body || '').replace(/\[\[([\s\S]*?)\]\]/g, '$1');
+      const rev = function (x) { return String(x || '').replace(/\[\[([\s\S]*?)\]\]/g, '$1'); };
       const curEx = Array.isArray(cur.extra) ? cur.extra : [];
-      const blk = function (s) { return String(s).replace(/\[\[[\s\S]*?\]\]/g, '████████'); };
-      const rev = function (s) { return String(s).replace(/\[\[([\s\S]*?)\]\]/g, '$1'); };
-      let pubEx;
-      if (Array.isArray(b.extra) && typeof b.body === 'string' && b.body.trim()) {
-        if (b.extra.length !== curEx.length) return send(res, 400, { error: 'Die Zusatzfelder dürfen beim Schwärzen nicht verändert werden.' });
-        pubEx = b.extra.map(function (x, i) {
-          const k = str(x && x.k, 60), v2 = str(x && x.v, 2000);
-          if (strip(k).trim() !== strip(curEx[i].k).trim() || strip(v2).replace(/\s+/g, ' ').trim() !== strip(curEx[i].v).replace(/\s+/g, ' ').trim()) return null;
-          return { k: blk(k), v: blk(v2) };
-        });
-        if (pubEx.indexOf(null) >= 0) return send(res, 400, { error: 'Die Zusatzfelder dürfen beim Schwärzen nicht verändert werden. Setze nur [[doppelte Klammern]].' });
-      } else if (u.role === 'owner') {
-        const bl = typeof b.body === 'string' && b.body.trim();
-        pubEx = curEx.map(function (x) { return { k: bl ? blk(x.k) : rev(x.k), v: bl ? blk(x.v) : rev(x.v) }; });
-      } else pubEx = [];
-      if (!old && Object.keys(db.declass).length >= 500) return send(res, 400, { error: 'Zu viele deklassifizierte Berichte.' });
+      const text = rev(cur.body);
+      const pubEx = curEx.map(function (x) { return { k: rev(x.k), v: rev(x.v) }; });
+      if (!old && Object.keys(db.releases).length >= 500) return send(res, 400, { error: 'Zu viele freigegebene Berichte.' });
       const tok = old || crypto.randomBytes(15).toString('hex');
-      db.declass[tok] = { rid: dm[1], ti: cur.ti, t: cur.t, d: cur.d, byName: authorId(cur.by, cur.byName), body: text,
+      db.releases[tok] = { rid: dm[1], ti: cur.ti, t: cur.t, d: cur.d, byName: authorId(cur.by, cur.byName), body: text,
         extra: pubEx,
         decName: dispName(u), ts: Date.now(), hash: hashPw(pw) };
-      logAct(u, old ? 'Deklassifizierung erneuert' : 'Bericht deklassifiziert', cur.ti + ' (per Link und Passwort abrufbar)'); bump();
+      logAct(u, old ? 'Freigabe erneuert' : 'Bericht freigegeben', cur.ti + ' (per Link und Passwort abrufbar)'); bump();
       return send(res, 200, { token: tok });
     }
   }
@@ -1023,7 +1005,7 @@ async function api(req, res, url) {
       Object.assign(cur, o); cur.edited = fullDate(); logAct(u, 'Bericht geändert', cur.t + ' · ' + cur.cls + ': ' + cur.ti); bump();
       return send(res, 200, { ok: true });
     }
-    if (method === 'DELETE') { logAct(u, 'Bericht gelöscht', cur.ti); Object.keys(db.declass).forEach(function (t) { if (db.declass[t].rid === rm[1]) delete db.declass[t]; }); delete db.reports[rm[1]]; bump(); return send(res, 200, { ok: true }); }
+    if (method === 'DELETE') { logAct(u, 'Bericht gelöscht', cur.ti); Object.keys(db.releases).forEach(function (t) { if (db.releases[t].rid === rm[1]) delete db.releases[t]; }); delete db.reports[rm[1]]; bump(); return send(res, 200, { ok: true }); }
   }
   if (p === '/api/ops' && method === 'POST') {
     const su = need(req, 'opsStart');
@@ -1101,7 +1083,7 @@ async function api(req, res, url) {
   if (p === '/api/users' && method === 'GET') {
     const lu = need(req, 'viewer');
     if (!can(lu, 'accounts') && !can(lu, 'groups')) return send(res, 403, { error: 'Dafür fehlen dir die Rechte.' });
-    return send(res, 200, { roles: rolesList(), storage: REMOTE ? (remoteOk ? 'remote' : 'remote-error') : 'file', users: !can(lu, 'accounts') ? [] : Object.keys(db.users).sort(function (a, b) { const ua = db.users[a], ub = db.users[b]; return !!ub.untouchable - !!ua.untouchable || (b === MAIN) - (a === MAIN) || rankOf(ub.role) - rankOf(ua.role) || String(dispName(ua)).localeCompare(String(dispName(ub)), 'de'); }).map(function (k) { const u = db.users[k]; return { name: u.name, display: dispName(u), role: u.role, roleLabel: (db.roles[u.role] || {}).label, created: u.created, expires: u.expires || 0, blocked: !!u.blocked, decl: !!u.decl, untouchable: !!u.untouchable, groupLabel: u.groupLabel || '', main: u.name === MAIN, mustChange: !!u.mustChange }; }) });
+    return send(res, 200, { roles: rolesList(), storage: REMOTE ? (remoteOk ? 'remote' : 'remote-error') : 'file', users: !can(lu, 'accounts') ? [] : Object.keys(db.users).sort(function (a, b) { const ua = db.users[a], ub = db.users[b]; return !!ub.untouchable - !!ua.untouchable || (b === MAIN) - (a === MAIN) || rankOf(ub.role) - rankOf(ua.role) || String(dispName(ua)).localeCompare(String(dispName(ub)), 'de'); }).map(function (k) { const u = db.users[k]; return { name: u.name, display: dispName(u), role: u.role, roleLabel: (db.roles[u.role] || {}).label, created: u.created, expires: u.expires || 0, blocked: !!u.blocked, rel: !!u.rel, untouchable: !!u.untouchable, groupLabel: u.groupLabel || '', main: u.name === MAIN, mustChange: !!u.mustChange }; }) });
   }
   if (p === '/api/users' && method === 'POST') {
     const me = need(req, 'accounts');
@@ -1207,10 +1189,10 @@ async function api(req, res, url) {
         if (nb && u.name === me.name) return send(res, 400, { error: 'Du kannst dein eigenes Konto nicht sperren.' });
         if (nb !== !!u.blocked) { if (nb) { u.blocked = true; u.since = Date.now(); } else delete u.blocked; uch.push(nb ? 'gesperrt' : 'entsperrt'); }
       }
-      if ('decl' in b) {
-        if (me.role !== 'owner') return send(res, 403, { error: 'Die Deklassifizierungs-Freigabe vergibt nur die Ordensleitung.' });
-        const nd = !!b.decl;
-        if (nd !== !!u.decl) { if (nd) u.decl = true; else delete u.decl; uch.push(nd ? 'darf Berichte deklassifizieren' : 'Deklassifizierungs-Recht entzogen'); }
+      if ('rel' in b) {
+        if (me.role !== 'owner') return send(res, 403, { error: 'Die Freigabe-Berechtigung vergibt nur die Ordensleitung.' });
+        const nd = !!b.rel;
+        if (nd !== !!u.rel) { if (nd) u.rel = true; else delete u.rel; uch.push(nd ? 'darf Berichte freigeben' : 'Freigabe-Recht entzogen'); }
       }
       let pw = null;
       if (b.reset === true && u.name !== MAIN) { pw = genPassword(); u.hash = hashPw(pw); u.since = Date.now(); u.mustChange = true; uch.push('neues Passwort erzeugt'); }
@@ -1236,7 +1218,7 @@ const server = http.createServer(function (req, res) {
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405); return res.end(); }
   if (url.pathname === '/healthz') { res.writeHead(200, { 'Content-Type': 'text/plain' }); return res.end('ok'); }
   if (/^\/d\/[a-f0-9]{30}$/.test(url.pathname)) {
-    fs.readFile(DECL_FILE, function (err, buf) {
+    fs.readFile(REL_FILE, function (err, buf) {
       if (err) { res.writeHead(500); return res.end('d.html fehlt'); }
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' });
       res.end(req.method === 'HEAD' ? undefined : buf);
