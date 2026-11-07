@@ -1,4 +1,4 @@
-# Ordensmitglied Datenbank
+# Jedi Datenbank
 
 Node.js, keine Abhängigkeiten. Start: `node server.js` (Port aus `PORT`).
 
@@ -47,8 +47,8 @@ Unter „Konto“ → „Gruppen und Rechte“ legt die Jedi Leitung pro Gruppe 
 ## Sichtbarkeit nach Gruppen
 Personen, Akten (bei Personen) und Operationen haben ein Feld „Sichtbar für“. Standard: alle Gruppen. Wählt man „Alle Gruppen“ ab, sehen nur die angehakten Gruppen den Eintrag; die anderen sehen ihn gar nicht (der Server liefert ihn nicht aus). Die Jedi Leitung sieht immer alles. Bei Operationen ändert man die Sichtbarkeit über den Knopf „Sichtbarkeit“ (ab Verwalten). Wird eine Gruppe gelöscht, bleiben ihre Einträge eingeschränkt (dann nur Jedi Leitung).
 
-## Kontonamen und Ordensmitglied ID
-Namen dürfen Leerzeichen und Großbuchstaben enthalten (z. B. „Nario Zeyscho“). Bei der Anmeldung ist die Schreibweise egal. Jedes Konto bekommt automatisch eine Ordensmitglied ID (z. B. SD-4821), die Jedi Leitung kann sie unter „Konto“ ändern. Beim Namen lässt sich nachträglich nur die Groß-/Kleinschreibung ändern.
+## Kontonamen
+Namen dürfen Leerzeichen und Großbuchstaben enthalten (z. B. „Nario Zeyscho“). Bei der Anmeldung ist die Schreibweise egal. Beim Namen lässt sich nachträglich nur die Groß-/Kleinschreibung ändern.
 
 ## Farben
 Labels können Weiß, Hellgrau, Silber, Mittelgrau, Rot, Dunkelrot, Orange, Gelb, Grün, Dunkelgrün, Hellblau, Blau, Dunkelblau, Lila oder Pink sein.
@@ -84,36 +84,24 @@ Konten lassen sich in der Kontenliste mit „Sperren“ deaktivieren (Recht „K
 ## Jedi Ermittler
 Die Jedi Leitung kann Konten zu „Jedi Ermittler“ machen (beim Anlegen unter „Jedi Ermittler“ oder in der Kontenliste mit „Jedi Ermittler“ / „Ermittler entziehen“; das Haupt-Owner-Konto kann sich selbst freigeben). Nur diese Konten sehen den Reiter „Jedi Ermittler“, auch die Jedi Leitung nicht ohne Freigabe. Der Server liefert die Daten ausschließlich an freigegebene Konten und nie über die normalen Datenabfragen aus. Dort tragen sie ein: Tarnidentitäten (Tarnname, Status, Einsatzort, Legende, Notiz), Informanten (Name, Zuverlässigkeit, Status, Quelle, Kontaktweg, Ort, Notiz) und Gespräche (Betreff, Zeitpunkt, Gesprächspartner, Tarnidentität, Informant, Ort, Protokoll). Alle Ermittler sehen alle Einträge; eigene Einträge bearbeitet und löscht man selbst, fremde nur mit dem Recht „Fremde Inhalte“. Im Log steht nur, dass ein Eintrag angelegt, geändert oder gelöscht wurde, nie der Inhalt. Wird die Freigabe entzogen, ist der Reiter sofort weg; die Einträge bleiben erhalten.
 
-## RIS Kooperation
-Neuer Reiter „RIS Kooperation“ mit zwei Bereichen: „Berichts Austausch Wachen“ (Berichte der Ordensmitglied an das RIS) und „Berichts Austausch RIS“ (Berichte des RIS an die Wachen). Beide Seiten lesen beide Bereiche, schreiben aber nur in ihren eigenen. Berichte haben Titel, optional ein Aktenzeichen und den Text. „Berichts Austausch RIS“ bearbeiten und löschen nur RIS-Konten (alle RIS-Konten, auch fremde Berichte), „Berichts Austausch Wachen“ nur Konten der Ordensmitglied-Seite mit dem Recht „RIS Kooperation“ (auch die Jedi Leitung). Die jeweils andere Seite liest nur.
-- **RIS-Konten:** Beim Anlegen eines Kontos unter „Konto-Typ“ „RIS-Konto“ wählen (Recht „Konten“). Ein RIS-Konto sieht und erreicht nur den Reiter „RIS Kooperation“ (plus Passwort ändern unter „Konto“). Der Server lehnt alle anderen Abfragen für dieses Konto ab (Personen, Berichte, Karte, Logs, Ermittler …). Es schreibt nur in „Berichts Austausch RIS“.
-- **Ordensmitglied-Seite:** Neues Gruppenrecht „RIS Kooperation“ (unter „Gruppen und Rechte“): die Gruppe sieht den Reiter und schreibt in „Berichts Austausch Wachen“. Die Jedi Leitung hat das Recht immer.
-- Anlegen, Ändern und Löschen stehen im Log (mit Titel). Bei UMBRA sind auch RIS-Konten gesperrt.
-
 ## Name
-Die Seite heißt jetzt „Ordensmitglied Datenbank“ (Titel, Kopf, Anmeldung, Fußzeile).
+Die Seite heißt „Jedi Datenbank“ (Titel, Kopf, Anmeldung, Fußzeile).
 
 ## Phasen der Operationen und Sortierung der Konten
 Operationen durchlaufen feste Phasen: 0 % Planung, 25 % Mitglieder Sammlung, 50 % Briefing, 75 % Durchführung, 100 % Abgeschlossen. Neue Operationen starten bei „Planung“, der Knopf „Weiter: …“ (ab dem Recht „Op. steuern“) setzt die nächste Phase. Bei „Abgeschlossen“ lässt sich die Operation archivieren. Bereits vorhandene Operationen werden beim Start auf die nächstniedrigere Phase gesetzt. Die Phasenwechsel stehen im Log.
 Die Kontenliste ist nach Rang sortiert: zuerst unantastbare Konten, dann das Haupt-Owner-Konto, dann nach Rang der Gruppe von hoch nach niedrig, bei gleichem Rang alphabetisch.
 
 ## Unantastbare Konten
-Unantastbare Konten sind fest im Code (`UNTOUCHABLE` in `server.js`) hinterlegt, aktuell „Mace Windu“ mit der Ordensmitglied ID RV-0000 und der Gruppenbezeichnung „Jedi Ratsvorsitz“ (technisch die Rechte der Jedi Leitung, also alle Rechte; die Gruppe „Jedi Leitung“ selbst heißt weiterhin so). Das Konto steht normal in der Kontenliste unter „Konten“, mit dem Label „Unantastbar“ und ohne Bearbeiten-Knöpfe, immer ganz oben (noch vor dem Haupt-Owner-Konto). Es kann von niemandem geändert werden, auch nicht vom Haupt-Owner: kein Löschen, Sperren, Befristen, Gruppenwechsel, Passwort-Reset und keine Umbenennung (der Server lehnt das ab). Nur das Konto selbst ändert sein Passwort unter „Konto“. Beim ersten Login muss das Startpasswort ersetzt werden. Wird das Konto in den Daten gelöscht, gesperrt oder herabgestuft, stellt der nächste Start es wieder her. Notfall-Zugang bei vergessenem Passwort: In Render die Umgebungsvariable `UNTOUCHABLE_PASSWORD_MACE_WINDU` setzen (dann gilt dieses Passwort ohne erzwungene Änderung). Weitere Konten: in `server.js` zur Liste `UNTOUCHABLE` ergänzen (Passwort-Hash mit `node server.js --hash "passwort"`).
+Unantastbare Konten sind fest im Code (`UNTOUCHABLE` in `server.js`) hinterlegt, aktuell „Mace Windu“ mit der Gruppenbezeichnung „Jedi Ratsvorsitz“ (technisch die Rechte der Jedi Leitung, also alle Rechte; die Gruppe „Jedi Leitung“ selbst heißt weiterhin so). Das Konto steht normal in der Kontenliste unter „Konten“, mit dem Label „Unantastbar“ und ohne Bearbeiten-Knöpfe, immer ganz oben (noch vor dem Haupt-Owner-Konto). Es kann von niemandem geändert werden, auch nicht vom Haupt-Owner: kein Löschen, Sperren, Befristen, Gruppenwechsel, Passwort-Reset und keine Umbenennung (der Server lehnt das ab). Nur das Konto selbst ändert sein Passwort unter „Konto“. Beim ersten Login muss das Startpasswort ersetzt werden. Wird das Konto in den Daten gelöscht, gesperrt oder herabgestuft, stellt der nächste Start es wieder her. Notfall-Zugang bei vergessenem Passwort: In Render die Umgebungsvariable `UNTOUCHABLE_PASSWORD_MACE_WINDU` setzen (dann gilt dieses Passwort ohne erzwungene Änderung). Weitere Konten: in `server.js` zur Liste `UNTOUCHABLE` ergänzen (Passwort-Hash mit `node server.js --hash "passwort"`).
 
 ## Archiv
 Neuer Reiter „Archiv“ (SR-AR) mit zwei Bereichen, zwischen denen man oben umschaltet; beide haben eine Suche und zeigen die Einträge als Karten.
 - **Machtfähigkeiten:** Karte mit Icon oben, darunter Name, darunter die Beschreibung. Das Icon lädt man als Bild hoch (PNG, JPEG, WebP, GIF); die Seite verkleinert es automatisch auf höchstens 128×128 Pixel. „Icon entfernen“ nimmt es wieder weg. Name und Beschreibung sind frei schreibbar.
 - **Prüfungen:** Karte mit dem Prüfungsnamen als Kopfzeile, darunter eine Zeile „Prüfungs Leiter“ und darunter die Prüfungsbeschreibung. Die Leiter wählt man aus einer Liste aller Konten und aller Personen aus dem Register (die man sehen darf); mehrere sind möglich, mit × nimmt man einen wieder heraus. Umbenannte Konten oder Personen erscheinen automatisch mit dem neuen Namen.
-Lesen dürfen alle normalen Konten (RIS-Konten nicht). Eintragen, ändern und löschen geht mit dem neuen Gruppenrecht „Archiv“ (unter „Gruppen und Rechte“); eigene Einträge bearbeitet man selbst, fremde nur mit „Fremde Inhalte“. Standardmäßig haben das Recht Gelehrter, Wissensrat und die Jedi Leitung; bestehende eigene Gruppen bekommen es, wenn sie das Recht „Personen“ haben. Höchstens 300 Einträge pro Bereich. Anlegen, Ändern und Löschen stehen im Log (Bereich „Archiv“).
-
-## RIS Kooperation: Akten und Berichte anhängen
-Auf der Ordensmitglied-Seite („Berichts Austausch Wachen“) kann man beim Schreiben oder Bearbeiten eines Berichts bis zu 10 Akten (Personen aus dem Register) und Berichte von der Website anhängen. Die Auswahl erfolgt über eine Liste; angezeigt werden nur Akten und Berichte, die das schreibende Konto selbst sehen bzw. lesen darf. Der Server übernimmt beim Speichern eine Kopie (bei Akten Rang, Status, Gefahrenlevel, Ort, Aussehen, Notiz, weitere Felder und alle sichtbaren Akteneinträge, bei Berichten Text und Anhänge), damit auch RIS-Konten sie lesen können, ohne sonst Zugriff auf die Website zu haben. Spätere Änderungen an der Original-Akte erscheinen nicht in der Kopie. Der Berichtstext darf leer bleiben, wenn mindestens ein Anhang vorhanden ist. Das Anhängen steht im Log (Bereich „RIS“).
-
-## KoS (Kill on Sight)
-Im Personenregister lässt sich jede Person mit „KoS setzen“ (Recht „Personen“, mit Bestätigung) oder über das Häkchen „KoS“ im Formular als Kill on Sight markieren, „KoS aufheben“ nimmt es zurück. KoS-Personen erscheinen mit rotem „KoS“-Label und dunkelroter Zeile in der Liste, mit rotem Banner in der Detailansicht und als Zähler im Dashboard. Setzen und Aufheben stehen im Log.
+Lesen dürfen alle Konten. Eintragen, ändern und löschen geht mit dem neuen Gruppenrecht „Archiv“ (unter „Gruppen und Rechte“); eigene Einträge bearbeitet man selbst, fremde nur mit „Fremde Inhalte“. Standardmäßig haben das Recht Gelehrter, Wissensrat und die Jedi Leitung; bestehende eigene Gruppen bekommen es, wenn sie das Recht „Personen“ haben. Höchstens 300 Einträge pro Bereich. Anlegen, Ändern und Löschen stehen im Log (Bereich „Archiv“).
 
 ## Notfall UMBRA (Dialogkette)
-„Notfall vorbereiten“ öffnet drei Fenster: Hinweis (GITs nötig) → Bestätigung mit Ordensmitglied ID → Meldung „/git <ID> autorisiert Notfallprotokoll Umbra und sperrt die Ordensmitglied Datenbank …“. Erst bei „Sicher“ wird gesperrt. Die Scan-Funktion bei den Planeten wurde entfernt.
+„Notfall vorbereiten“ öffnet drei Fenster: Hinweis (GITs nötig) → Bestätigung mit deinem Namen → Meldung „/git <Name> autorisiert Notfallprotokoll Umbra und sperrt die Jedi Datenbank …“. Erst bei „Sicher“ wird gesperrt. Die Scan-Funktion bei den Planeten wurde entfernt.
 
 ## Berichte deklassifizieren
 - Die Jedi Leitung vergibt unter Konten den Knopf „Deklassifizieren erlauben“ (Jedi Leitung darf immer).
@@ -122,28 +110,26 @@ Im Personenregister lässt sich jede Person mit „KoS setzen“ (Recht „Perso
 
 **Schwärzungspflicht:** Wer nicht zur Jedi Leitung gehört, muss einen Bericht beim Deklassifizieren eigenhändig schwärzen (mindestens eine Stelle in [[doppelten Klammern]], Text sonst unverändert). Die geschwärzten Stellen erscheinen öffentlich als ████████. Nur die Jedi Leitung darf ohne Schwärzung deklassifizieren.
 
-**RIS-Berichte:** „Berichts Austausch RIS“ zeigt Berichte im RIS-Dossier-Layout (Kopfzeile, Meta-Raster, nummerierte Abschnitte). Zusatzfelder: Rang, Planet / Ort, Beteiligtes Personal, Einheiten. Abschnitte im Text mit „## Überschrift“ beginnen.
-
 **Karte:** Mausrad zoomt die Galaxis Karte (bis 8x) zum Mauszeiger, mit gedrückter Maus verschiebt man den Ausschnitt, Doppelklick setzt zurück. Bei normaler Größe scrollt das Rad weiter die Seite.
 **Karte erweitern:** Herauszoomen (bis 0,25x) zeigt freien Raum rund um die Karte; im Bearbeitungsmodus lassen sich Systeme auch außerhalb des bisherigen Rahmens setzen (gestrichelter Rahmen = ursprünglicher Bereich).
 
-**Dossier-Layout (Ordensmitglied):** Berichte, Berichts-Anhänge, Personenakten und der Ordensmitglied-Austausch erscheinen im grauen Ordensmitglied-Dossier-Layout (Kopf, Meta-Raster, nummerierte Abschnitte). Abschnitte im Text mit „## Überschrift“ beginnen.
+**Dossier-Layout (Jedi):** Berichte, Berichts-Anhänge, Personenakten und der Austausch erscheinen im grauen Dossier-Layout (Kopf, Meta-Raster, nummerierte Abschnitte). Abschnitte im Text mit „## Überschrift“ beginnen.
 
-**Akten-Nummer:** Jede Akte bzw. jeder Bericht im Ordensmitglied-Layout trägt eine Nummer „WA-“ plus 9 Zeichen (Buchstaben und Zahlen), die aus der internen ID erzeugt wird und gleich bleibt. Das Layout gilt auch für die Einträge der Jedi Ermittler.
+**Akten-Nummer:** Jede Akte bzw. jeder Bericht im Jedi-Layout trägt eine Nummer „JA-“ plus 9 Zeichen (Buchstaben und Zahlen), die aus der internen ID erzeugt wird und gleich bleibt. Das Layout gilt auch für die Einträge der Jedi Ermittler.
 
-**Aktive Aufträge:** Reiter mit den Tabs „Beschattungen“ und „KoS“. Er listet alle Personen aus dem Register, bei denen das gesetzt ist, mit einem Textfeld „Auftrag / Begründung“ (Recht „Personen“ zum Schreiben). Beenden geht direkt dort oder bei der Person.
+**Aktive Aufträge:** Reiter mit den Tab „Beschattungen“. Er listet alle Personen aus dem Register, die beschattet werden, mit einem Textfeld „Auftrag / Begründung“ (Recht „Personen“ zum Schreiben). Beenden geht direkt dort oder bei der Person.
 
-**WiA (Ordensmitglied im Auftrag):** In „Aktive Aufträge“ kann jedes Konto einen laufenden Auftrag („Beschattung“ oder „KoS“) übernehmen und erscheint dann mit der vollständigen Ordensmitglied ID als „WiA SD-1234“ (auch in der Personenansicht). Mit dem Ende des Auftrags werden die Übernahmen gelöscht.
+**JiA (Jedi im Auftrag):** In „Aktive Aufträge“ kann jedes Konto einen laufenden Auftrag („Beschattung“) übernehmen und erscheint dann mit seinem Namen als „JiA Name“ (auch in der Personenansicht). Mit dem Ende des Auftrags werden die Übernahmen gelöscht.
 
-**Aufträge zuteilen:** Die Jedi Leitung teilt unter „Aktive Aufträge“ Konten einem Auftrag zu; zugeteilte Konten sind die Auftragsleitung (AL). Alle anderen Konten stellen mit „Übernahme anfragen“ eine Anfrage; die Auftragsleitung (und die Jedi Leitung) sieht die offenen Anfragen und kann sie „Akzeptieren“ oder „Ablehnen“. Erst akzeptierte Konten erscheinen als WiA.
+**Aufträge zuteilen:** Die Jedi Leitung teilt unter „Aktive Aufträge“ Konten einem Auftrag zu; zugeteilte Konten sind die Auftragsleitung (AL). Alle anderen Konten stellen mit „Übernahme anfragen“ eine Anfrage; die Auftragsleitung (und die Jedi Leitung) sieht die offenen Anfragen und kann sie „Akzeptieren“ oder „Ablehnen“. Erst akzeptierte Konten erscheinen als JiA.
 
-**Sonstige Aufträge:** Tab in „Aktive Aufträge“ mit den Zeilen Titel, Zielperson / Zielobjekt, Grund und Beschreibung des Auftrags. Erstellen und Bearbeiten: Recht „Op. starten“ (fremde Aufträge: „Fremde Inhalte“). Zuteilen, Anfragen und Akzeptieren (WiA, Auftragsleitung) funktionieren wie bei Beschattung und KoS.
+**Sonstige Aufträge:** Tab in „Aktive Aufträge“ mit den Zeilen Titel, Zielperson / Zielobjekt, Grund und Beschreibung des Auftrags. Erstellen und Bearbeiten: Recht „Op. starten“ (fremde Aufträge: „Fremde Inhalte“). Zuteilen, Anfragen und Akzeptieren (JiA, Auftragsleitung) funktionieren wie bei der Beschattung.
 
-**Recht „Beschatten / KoS“ und Dokumentation:** Gruppen können unter Konto → Gruppen das Recht „Beschatten / KoS“ bekommen (Personen auf Beschattung oder KoS setzen, aufheben und den Auftrag schreiben, ohne Akten ändern zu dürfen). Mitglieder eines Auftrags (akzeptierte WiA, Auftragsleitung, Jedi Leitung) dokumentieren in „Aktive Aufträge“ Gespräche, Protokolle und Eliminierungen. Lesen dürfen nur Mitglieder und die Jedi Leitung; löschen kann der Verfasser oder die Auftragsleitung. Beim Beenden eines Auftrags bleibt die Dokumentation erhalten.
+**Recht „Beschatten“ und Dokumentation:** Gruppen können unter Konto → Gruppen das Recht „Beschatten“ bekommen (Personen auf Beschattung setzen, aufheben und den Auftrag schreiben, ohne Akten ändern zu dürfen). Mitglieder eines Auftrags (akzeptierte JiA, Auftragsleitung, Jedi Leitung) dokumentieren in „Aktive Aufträge“ Gespräche und Protokolle. Lesen dürfen nur Mitglieder und die Jedi Leitung; löschen kann der Verfasser oder die Auftragsleitung. Beim Beenden eines Auftrags bleibt die Dokumentation erhalten.
 
-**Überwacher:** Konten der Gruppen „Wissensrat“ und „Jedi Leitung“ können unter „Aktive Aufträge“ mit „Auftrag überwachen“ Überwacher eines Auftrags werden. Sie sehen die Dokumentation (Gespräche, Protokolle, Eliminierungen) nur lesend, sind aber keine WiA und keine Auftragsleitung. Entfernen kann nur die Jedi Leitung.
+**Überwacher:** Konten der Gruppen „Wissensrat“ und „Jedi Leitung“ können unter „Aktive Aufträge“ mit „Auftrag überwachen“ Überwacher eines Auftrags werden. Sie sehen die Dokumentation (Gespräche, Protokolle) nur lesend, sind aber keine JiA und keine Auftragsleitung. Entfernen kann nur die Jedi Leitung.
 
-**Geheimhaltung der Dokumentation:** Gespräche, Protokolle und Eliminierungen sieht nur, wer Teil des Auftrags ist (akzeptierte WiA, Auftragsleitung oder Überwacher). Die Jedi Leitung sieht die Dokumentation aller Aufträge immer und weist Überwacher zu (Auswahl „Überwacher zuweisen“ bei jedem Auftrag).
+**Geheimhaltung der Dokumentation:** Gespräche und Protokolle sieht nur, wer Teil des Auftrags ist (akzeptierte JiA, Auftragsleitung oder Überwacher). Die Jedi Leitung sieht die Dokumentation aller Aufträge immer und weist Überwacher zu (Auswahl „Überwacher zuweisen“ bei jedem Auftrag).
 
 **Einstellungen (pro Konto):** Der Reiter „Einstellungen“ steht immer ganz unten. Jedes Konto wählt für sich die Farbe (Vorgaben oder eigene), die Darstellung (Minimalistisch, Normal, Groß) sowie Reihenfolge und Sichtbarkeit der Reiter. Die Werte werden am Konto gespeichert und gelten auf jedem Gerät.
 
@@ -158,3 +144,9 @@ Pro Konto einstellbar: Farbwelt (Schwarz, Graphit, Nachtblau), hoher Kontrast, S
 
 ### Freie Farben
 Akzentfarbe (Farbfeld oder Hex-Wert) färbt jetzt Kopfzeilen, Knöpfe, Rahmen, Auswahlfelder und Schein; die Hintergrundfarbe ist frei wählbar (`bg`), Flächen und Rahmen leiten sich davon ab.
+
+## Entfernt
+- **Wächter ID / Ordensmitglied ID:** gibt es nicht mehr. Konten haben nur noch einen Namen; Autoren, Deklassifizierer und Logs zeigen den Namen. Alte IDs werden beim Start aus den gespeicherten Daten gelöscht.
+- **KoS (Kill on Sight):** Funktion, Tab, Banner, Zähler und Dokumentationsart „Eliminierung“ sind entfernt. Alte KoS-Daten werden beim Start gelöscht (bereits geschriebene Dokumentationen der Art „Eliminierung“ bei Beschattungen/Aufträgen bleiben lesbar).
+- **RIS Kooperation:** Reiter, Berichtsaustausch, RIS-Konten und das Gruppenrecht „RIS Kooperation“ sind entfernt. Alte RIS-Konten und -Berichte werden beim Start gelöscht.
+- „Wächter“ heißt überall „Jedi“ (z. B. „Jedi Datenbank“, „JiA“ = Jedi im Auftrag).
