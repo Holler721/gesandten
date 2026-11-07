@@ -68,8 +68,8 @@ Standard ist „Rang“: in der Reihenfolge der Ränge unter „Anpassung“ (ob
 ## Personen beschreiben
 Jede Akte hat zusätzlich zu Name und Rang die Felder Spezies und Aussehen sowie beliebig viele eigene Felder (Bezeichnung + Beschreibung, bis 20, z. B. Herkunft, Waffen, Fähigkeiten). Sie stehen im Formular „Akte anlegen/bearbeiten“, erscheinen in der Detailansicht, die Spezies ist auch über die Suche findbar. Änderungen daran stehen im Log.
 
-## Zugehörigkeit und Beschattung
-Im Personenregister heißt das frühere „Status“ jetzt „Zugehörigkeit“. „Kontakt aufnehmen“ gibt es nicht mehr. Beschattete Personen sind sichtbar: rotes Label „● Beschattet“ und roter Balken in der Liste, Banner in der Detailansicht.
+## Zugehörigkeit
+Im Personenregister heißt das frühere „Status“ jetzt „Zugehörigkeit“. „Kontakt aufnehmen“ gibt es nicht mehr.
 
 ## Rechte „Konten“ und „Gruppen“
 Unter „Gruppen und Rechte“ gibt es zwei neue Rechte. „Konten“: Konten anlegen, Gruppe zuweisen, Passwort zurücksetzen, löschen. „Gruppen“: Gruppen und ihre Rechte verwalten. Standardmäßig hat sie nur die Jedi Leitung. Wer sie ohne Jedi Leitung bekommt, kann keine Rechte erhöhen: Es lassen sich nur Gruppen vergeben, deren Rechte man selbst hat, nur eigene Rechte an Gruppen vergeben oder entziehen, und Konten oder Gruppen mit höheren Rechten, das eigene Konto sowie Jedi-Leitungs-Konten bleiben tabu. Jedi-Leitungs-Konten legt weiterhin nur das Haupt-Owner-Konto an.
@@ -117,15 +117,15 @@ Lesen dürfen alle Konten. Eintragen, ändern und löschen geht mit dem neuen Gr
 
 **Akten-Nummer:** Jede Akte bzw. jeder Bericht im Jedi-Layout trägt eine Nummer „JA-“ plus 9 Zeichen (Buchstaben und Zahlen), die aus der internen ID erzeugt wird und gleich bleibt.
 
-**Aktive Aufträge:** Reiter mit den Tab „Beschattungen“. Er listet alle Personen aus dem Register, die beschattet werden, mit einem Textfeld „Auftrag / Begründung“ (Recht „Personen“ zum Schreiben). Beenden geht direkt dort oder bei der Person.
+**Aktive Aufträge:** Reiter für freie Aufträge (siehe „Sonstige Aufträge“).
 
-**JiA (Jedi im Auftrag):** In „Aktive Aufträge“ kann jedes Konto einen laufenden Auftrag („Beschattung“) übernehmen und erscheint dann mit seinem Namen als „JiA Name“ (auch in der Personenansicht). Mit dem Ende des Auftrags werden die Übernahmen gelöscht.
+**JiA (Jedi im Auftrag):** In „Aktive Aufträge“ kann jedes Konto einen laufenden Auftrag übernehmen und erscheint dann mit seinem Namen als „JiA Name“. Mit dem Ende des Auftrags werden die Übernahmen gelöscht.
 
 **Aufträge zuteilen:** Die Jedi Leitung teilt unter „Aktive Aufträge“ Konten einem Auftrag zu; zugeteilte Konten sind die Auftragsleitung (AL). Alle anderen Konten stellen mit „Übernahme anfragen“ eine Anfrage; die Auftragsleitung (und die Jedi Leitung) sieht die offenen Anfragen und kann sie „Akzeptieren“ oder „Ablehnen“. Erst akzeptierte Konten erscheinen als JiA.
 
-**Sonstige Aufträge:** Tab in „Aktive Aufträge“ mit den Zeilen Titel, Zielperson / Zielobjekt, Grund und Beschreibung des Auftrags. Erstellen und Bearbeiten: Recht „Op. starten“ (fremde Aufträge: „Fremde Inhalte“). Zuteilen, Anfragen und Akzeptieren (JiA, Auftragsleitung) funktionieren wie bei der Beschattung.
+**Sonstige Aufträge:** Tab in „Aktive Aufträge“ mit den Zeilen Titel, Zielperson / Zielobjekt, Grund und Beschreibung des Auftrags. Erstellen und Bearbeiten: Recht „Op. starten“ (fremde Aufträge: „Fremde Inhalte“). Zuteilen, Anfragen und Akzeptieren (JiA, Auftragsleitung).
 
-**Recht „Beschatten“ und Dokumentation:** Gruppen können unter Konto → Gruppen das Recht „Beschatten“ bekommen (Personen auf Beschattung setzen, aufheben und den Auftrag schreiben, ohne Akten ändern zu dürfen). Mitglieder eines Auftrags (akzeptierte JiA, Auftragsleitung, Jedi Leitung) dokumentieren in „Aktive Aufträge“ Gespräche und Protokolle. Lesen dürfen nur Mitglieder und die Jedi Leitung; löschen kann der Verfasser oder die Auftragsleitung. Beim Beenden eines Auftrags bleibt die Dokumentation erhalten.
+**Dokumentation:** Mitglieder eines Auftrags (akzeptierte JiA, Auftragsleitung, Jedi Leitung) dokumentieren in „Aktive Aufträge“ Gespräche und Protokolle. Lesen dürfen nur Mitglieder und die Jedi Leitung; löschen kann der Verfasser oder die Auftragsleitung. Beim Beenden eines Auftrags bleibt die Dokumentation erhalten.
 
 **Überwacher:** Konten der Gruppen „Wissensrat“ und „Jedi Leitung“ können unter „Aktive Aufträge“ mit „Auftrag überwachen“ Überwacher eines Auftrags werden. Sie sehen die Dokumentation (Gespräche, Protokolle) nur lesend, sind aber keine JiA und keine Auftragsleitung. Entfernen kann nur die Jedi Leitung.
 
@@ -147,9 +147,12 @@ Akzentfarbe (Farbfeld oder Hex-Wert) färbt jetzt Kopfzeilen, Knöpfe, Rahmen, A
 
 ## Entfernt
 - **Wächter ID / Ordensmitglied ID:** gibt es nicht mehr. Konten haben nur noch einen Namen; Autoren, Deklassifizierer und Logs zeigen den Namen. Alte IDs werden beim Start aus den gespeicherten Daten gelöscht.
-- **KoS (Kill on Sight):** Funktion, Tab, Banner, Zähler und Dokumentationsart „Eliminierung“ sind entfernt. Alte KoS-Daten werden beim Start gelöscht (bereits geschriebene Dokumentationen der Art „Eliminierung“ bei Beschattungen/Aufträgen bleiben lesbar).
+- **KoS (Kill on Sight):** Funktion, Tab, Banner, Zähler und Dokumentationsart „Eliminierung“ sind entfernt. Alte KoS-Daten werden beim Start gelöscht (bereits geschriebene Dokumentationen der Art „Eliminierung“ bei Aufträgen bleiben lesbar).
 - **RIS Kooperation:** Reiter, Berichtsaustausch, RIS-Konten und das Gruppenrecht „RIS Kooperation“ sind entfernt. Alte RIS-Konten und -Berichte werden beim Start gelöscht.
 - „Wächter“ heißt überall „Jedi“ (z. B. „Jedi Datenbank“, „JiA“ = Jedi im Auftrag).
 - **Feldforschung (Jedi Ermittler):** Reiter, Ermittler-Freigabe, Tarnidentitäten, Informanten und Gespräche sind entfernt; die gespeicherten Daten werden beim Start gelöscht.
 - **Laufband** oben ist entfernt (samt Einstellung). Das **Lagebild** zeigt nur noch Expeditionen, erledigte Expeditionen und Personen im Wissensregister.
 - Umbenannt: „Ordenschronik“ → „Logs“, „Holocron-Einstellungen“ → „Datenbankverwaltung“, „Abhandlungen“ → „Berichte“.
+
+- **Beschatten:** Funktion, Recht, Tab „Beschattungen“, Dashboard-Karte, Labels und Banner sind entfernt. Alte Beschattungsdaten werden beim Start gelöscht.
+- **Logo:** Das frühere Halbmond-Emblem ist überall durch das Jedi-Ordens-Logo (wie das Seiten-Icon) ersetzt.
