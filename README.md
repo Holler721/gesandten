@@ -53,6 +53,9 @@ Namen dürfen Leerzeichen und Großbuchstaben enthalten (z. B. „Nario Zeyscho�
 ## Farben
 Labels können Weiß, Hellgrau, Silber, Mittelgrau, Rot, Dunkelrot, Orange, Gelb, Grün, Dunkelgrün, Hellblau, Blau, Dunkelblau, Lila oder Pink sein.
 
+## Expeditionen an Berichten
+Beim Schreiben oder Bearbeiten eines Berichts können beliebig viele Expeditionen angeheftet werden (Haken bei „Expeditionen anheften“). Sie erscheinen unter dem Bericht als Schaltflächen mit Fortschritt; ein Klick öffnet die Expeditionen. Wird eine Expedition gelöscht, verschwindet sie auch am Bericht.
+
 ## Anhänge an Berichten
 Jeder Bericht hat unten „Anhänge“ (Titel + freier Text, wie die Akten bei Personen), jeweils mit eigener Sichtbarkeit nach Gruppen. Hinzufügen mit dem Recht „Berichte“, fremde Anhänge ändern mit „Fremde Inhalte“.
 
@@ -80,9 +83,6 @@ Jede Gruppe hat in der Tabelle „Gruppen und Rechte“ einen Rang von 1 bis 10 
 ## Sortierung der Gruppen und Konten sperren
 Gruppen stehen überall (Tabelle, Auswahllisten) sortiert: zuerst die Jedi Leitung, dann nach Rang von hoch nach niedrig, bei gleichem Rang alphabetisch. Neu angelegte Gruppen rutschen nach dem Speichern an ihre Stelle.
 Konten lassen sich in der Kontenliste mit „Sperren“ deaktivieren (Recht „Konten“, Rangregeln wie oben). Ein gesperrtes Konto ist sofort ausgeloggt und kann sich nicht anmelden („Konto gesperrt“), bleibt aber mit allen Einträgen bestehen. „Entsperren“ hebt es auf. Das eigene Konto und das Haupt-Owner-Konto lassen sich nicht sperren. Sperren und Entsperren stehen im Log.
-
-## Jedi Ermittler
-Die Jedi Leitung kann Konten zu „Jedi Ermittler“ machen (beim Anlegen unter „Jedi Ermittler“ oder in der Kontenliste mit „Jedi Ermittler“ / „Ermittler entziehen“; das Haupt-Owner-Konto kann sich selbst freigeben). Nur diese Konten sehen den Reiter „Jedi Ermittler“, auch die Jedi Leitung nicht ohne Freigabe. Der Server liefert die Daten ausschließlich an freigegebene Konten und nie über die normalen Datenabfragen aus. Dort tragen sie ein: Tarnidentitäten (Tarnname, Status, Einsatzort, Legende, Notiz), Informanten (Name, Zuverlässigkeit, Status, Quelle, Kontaktweg, Ort, Notiz) und Gespräche (Betreff, Zeitpunkt, Gesprächspartner, Tarnidentität, Informant, Ort, Protokoll). Alle Ermittler sehen alle Einträge; eigene Einträge bearbeitet und löscht man selbst, fremde nur mit dem Recht „Fremde Inhalte“. Im Log steht nur, dass ein Eintrag angelegt, geändert oder gelöscht wurde, nie der Inhalt. Wird die Freigabe entzogen, ist der Reiter sofort weg; die Einträge bleiben erhalten.
 
 ## Name
 Die Seite heißt „Jedi Datenbank“ (Titel, Kopf, Anmeldung, Fußzeile).
@@ -115,7 +115,7 @@ Lesen dürfen alle Konten. Eintragen, ändern und löschen geht mit dem neuen Gr
 
 **Dossier-Layout (Jedi):** Berichte, Berichts-Anhänge, Personenakten und der Austausch erscheinen im grauen Dossier-Layout (Kopf, Meta-Raster, nummerierte Abschnitte). Abschnitte im Text mit „## Überschrift“ beginnen.
 
-**Akten-Nummer:** Jede Akte bzw. jeder Bericht im Jedi-Layout trägt eine Nummer „JA-“ plus 9 Zeichen (Buchstaben und Zahlen), die aus der internen ID erzeugt wird und gleich bleibt. Das Layout gilt auch für die Einträge der Jedi Ermittler.
+**Akten-Nummer:** Jede Akte bzw. jeder Bericht im Jedi-Layout trägt eine Nummer „JA-“ plus 9 Zeichen (Buchstaben und Zahlen), die aus der internen ID erzeugt wird und gleich bleibt.
 
 **Aktive Aufträge:** Reiter mit den Tab „Beschattungen“. Er listet alle Personen aus dem Register, die beschattet werden, mit einem Textfeld „Auftrag / Begründung“ (Recht „Personen“ zum Schreiben). Beenden geht direkt dort oder bei der Person.
 
@@ -140,7 +140,7 @@ Beim Erstellen/Bearbeiten eines Berichts können bis zu 20 Zusatzfelder mit selb
 Im Deklassifizieren-Formular Text im Berichtstext oder in einem Zusatzfeld markieren und auf „▮ Schwärzen“ klicken (setzt `[[…]]`). „Schwärzung aufheben“ entfernt sie wieder. Zusatzfelder werden jetzt für alle Deklassifizierenden veröffentlicht, mit denselben Schwärzungen; ihr Inhalt darf dabei nicht verändert werden.
 
 ## Mehr Anpassungen (Einstellungen)
-Pro Konto einstellbar: Farbwelt (Schwarz, Graphit, Nachtblau), hoher Kontrast, Schriftart (Chakra Petch, Systemschrift, Monospace), Größe 80–140 %, Ecken (eckig, normal, rund), Effekte einzeln (Sternenhimmel, Laufband, Scanlinien, Animationen reduzieren, volle Breite, Start-Animation überspringen), Startseite nach der Anmeldung, sowie „Alle Einstellungen zurücksetzen“. Gespeichert am Konto (`/api/prefs`).
+Pro Konto einstellbar: Farbwelt (Schwarz, Graphit, Nachtblau), hoher Kontrast, Schriftart (Chakra Petch, Systemschrift, Monospace), Größe 80–140 %, Ecken (eckig, normal, rund), Effekte einzeln (Sternenhimmel, Scanlinien, Animationen reduzieren, volle Breite, Start-Animation überspringen), Startseite nach der Anmeldung, sowie „Alle Einstellungen zurücksetzen“. Gespeichert am Konto (`/api/prefs`).
 
 ### Freie Farben
 Akzentfarbe (Farbfeld oder Hex-Wert) färbt jetzt Kopfzeilen, Knöpfe, Rahmen, Auswahlfelder und Schein; die Hintergrundfarbe ist frei wählbar (`bg`), Flächen und Rahmen leiten sich davon ab.
@@ -150,3 +150,6 @@ Akzentfarbe (Farbfeld oder Hex-Wert) färbt jetzt Kopfzeilen, Knöpfe, Rahmen, A
 - **KoS (Kill on Sight):** Funktion, Tab, Banner, Zähler und Dokumentationsart „Eliminierung“ sind entfernt. Alte KoS-Daten werden beim Start gelöscht (bereits geschriebene Dokumentationen der Art „Eliminierung“ bei Beschattungen/Aufträgen bleiben lesbar).
 - **RIS Kooperation:** Reiter, Berichtsaustausch, RIS-Konten und das Gruppenrecht „RIS Kooperation“ sind entfernt. Alte RIS-Konten und -Berichte werden beim Start gelöscht.
 - „Wächter“ heißt überall „Jedi“ (z. B. „Jedi Datenbank“, „JiA“ = Jedi im Auftrag).
+- **Feldforschung (Jedi Ermittler):** Reiter, Ermittler-Freigabe, Tarnidentitäten, Informanten und Gespräche sind entfernt; die gespeicherten Daten werden beim Start gelöscht.
+- **Laufband** oben ist entfernt (samt Einstellung). Das **Lagebild** zeigt nur noch Expeditionen, erledigte Expeditionen und Personen im Wissensregister.
+- Umbenannt: „Ordenschronik“ → „Logs“, „Holocron-Einstellungen“ → „Datenbankverwaltung“, „Abhandlungen“ → „Berichte“.
