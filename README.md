@@ -35,14 +35,14 @@ Starten ab Gelehrter (Name und Einsatzgebiet frei wählbar). Umbenennen, vorantr
 ## Anpassung (ab Wissensrat)
 Unter "Konto" lassen sich Ränge, Labels (Zugehörigkeit: Republik, KUS, Neutral, Dunkle Machtpräsenz, mit Farbe und "Bedrohung"-Markierung) und Berichtsarten ändern. Umbenennen zieht alle bestehenden Einträge mit. Entfernen geht nur, wenn nichts mehr damit verknüpft ist.
 
-## Notfall (UMBRA)
-Wissensrat und Jedi Leitung können das Notfallprotokoll auslösen und beenden. Solange es aktiv ist, sind alle Konten unterhalb des Wissensrats gesperrt (Sperrbildschirm, der Server liefert keine Daten). Die Seite öffnet sich bei Ende von selbst wieder.
+## Archiv sperren
+Wissensrat und Jedi Leitung können das Archiv sperren und wieder öffnen. Solange es aktiv ist, sind alle Konten unterhalb des Wissensrats gesperrt (Sperrbildschirm, der Server liefert keine Daten). Die Seite öffnet sich bei Ende von selbst wieder.
 
 ## Akten bei Personen
 Im Personen-Register zeigt jede Person unten ihre Akten (neueste oben). Jede Akte hat Titel und freien Text. Anlegen ab dem Recht „Schreiben“; eigene Akten bearbeiten/löschen, fremde nur mit „Verwalten“.
 
 ## Gruppen und Rechte (Jedi Leitung)
-Unter „Konto“ → „Gruppen und Rechte“ legt die Jedi Leitung pro Gruppe einzeln fest: Personen, Akten, Berichte (inkl. Anhänge), Operationen starten, Operationen steuern, Karte, Fremde Inhalte ändern, Anpassung, Notfall, Offen lesen, Intern lesen, Vertraulich lesen, Logs. Mit „Offen lesen“ legst du fest, wer Berichte der Stufe „Offen“ sehen darf (bestehende Gruppen behalten es zunächst). Alte Rechte „Schreiben“/„Verwalten“ werden beim ersten Start automatisch auf die passenden Einzelrechte umgestellt. Neue Gruppen lassen sich dort anlegen und danach Konten zuweisen. Grundgruppen bleiben bestehen, die Jedi Leitung hat immer alle Rechte. Eine Gruppe lässt sich nur entfernen, wenn kein Konto sie mehr nutzt.
+Unter „Konto“ → „Gruppen und Rechte“ legt die Jedi Leitung pro Gruppe einzeln fest: Personen, Akten, Berichte (inkl. Anhänge), Operationen starten, Operationen steuern, Karte, Fremde Inhalte ändern, Anpassung, Archiv sperren, Offen lesen, Intern lesen, Vertraulich lesen, Logs. Mit „Offen lesen“ legst du fest, wer Berichte der Stufe „Offen“ sehen darf (bestehende Gruppen behalten es zunächst). Alte Rechte „Schreiben“/„Verwalten“ werden beim ersten Start automatisch auf die passenden Einzelrechte umgestellt. Neue Gruppen lassen sich dort anlegen und danach Konten zuweisen. Grundgruppen bleiben bestehen, die Jedi Leitung hat immer alle Rechte. Eine Gruppe lässt sich nur entfernen, wenn kein Konto sie mehr nutzt.
 
 ## Sichtbarkeit nach Gruppen
 Personen, Akten (bei Personen) und Operationen haben ein Feld „Sichtbar für“. Standard: alle Gruppen. Wählt man „Alle Gruppen“ ab, sehen nur die angehakten Gruppen den Eintrag; die anderen sehen ihn gar nicht (der Server liefert ihn nicht aus). Die Jedi Leitung sieht immer alles. Bei Operationen ändert man die Sichtbarkeit über den Knopf „Sichtbarkeit“ (ab Verwalten). Wird eine Gruppe gelöscht, bleiben ihre Einträge eingeschränkt (dann nur Jedi Leitung).
@@ -60,7 +60,7 @@ Beim Schreiben oder Bearbeiten eines Berichts können beliebig viele Expeditione
 Jeder Bericht hat unten „Anhänge“ (Titel + freier Text, wie die Akten bei Personen), jeweils mit eigener Sichtbarkeit nach Gruppen. Hinzufügen mit dem Recht „Berichte“, fremde Anhänge ändern mit „Fremde Inhalte“.
 
 ## Logs
-Menüpunkt „Logs“ (Recht „Logs“, standardmäßig nur Jedi Leitung): zeigt, wer wann was gemacht hat (Anmeldungen inkl. Fehlversuche, Personen, Akten, Berichte, Anhänge, Operationen, Karte, Anpassung, Notfall, Rechte, Konten). Gespeichert werden die letzten 3000 Aktionen. Filter: Suche, Konto, Bereich (z. B. Personen, Berichte, Konten), Aktion, Zeitraum (von/bis, Heute, 7 Tage, 30 Tage) und „Nur kritische“ (Fehlversuche, Löschungen, Notfall).
+Menüpunkt „Logs“ (Recht „Logs“, standardmäßig nur Jedi Leitung): zeigt, wer wann was gemacht hat (Anmeldungen inkl. Fehlversuche, Personen, Akten, Berichte, Anhänge, Operationen, Karte, Anpassung, Archiv sperren, Rechte, Konten). Gespeichert werden die letzten 3000 Aktionen. Filter: Suche, Konto, Bereich (z. B. Personen, Berichte, Konten), Aktion, Zeitraum (von/bis, Heute, 7 Tage, 30 Tage) und „Nur kritische“ (Fehlversuche, Löschungen, Archivsperre).
 
 ## Sortierung im Personenregister
 Standard ist „Rang“: in der Reihenfolge der Ränge unter „Anpassung“ (oben = zuerst, mit ▲ ▼ verschiebbar), innerhalb eines Rangs das neueste zuletzt.
@@ -100,13 +100,13 @@ Neuer Reiter „Archiv“ (SR-AR) mit zwei Bereichen, zwischen denen man oben um
 - **Prüfungen:** Karte mit dem Prüfungsnamen als Kopfzeile, darunter eine Zeile „Prüfungs Leiter“ und darunter die Prüfungsbeschreibung. Die Leiter wählt man aus einer Liste aller Konten und aller Personen aus dem Register (die man sehen darf); mehrere sind möglich, mit × nimmt man einen wieder heraus. Umbenannte Konten oder Personen erscheinen automatisch mit dem neuen Namen.
 Lesen dürfen alle Konten. Eintragen, ändern und löschen geht mit dem neuen Gruppenrecht „Archiv“ (unter „Gruppen und Rechte“); eigene Einträge bearbeitet man selbst, fremde nur mit „Fremde Inhalte“. Standardmäßig haben das Recht Gelehrter, Wissensrat und die Jedi Leitung; bestehende eigene Gruppen bekommen es, wenn sie das Recht „Personen“ haben. Höchstens 300 Einträge pro Bereich. Anlegen, Ändern und Löschen stehen im Log (Bereich „Archiv“).
 
-## Notfall UMBRA (Dialogkette)
-„Notfall vorbereiten“ öffnet drei Fenster: Hinweis (GITs nötig) → Bestätigung mit deinem Namen → Meldung „/git <Name> autorisiert Notfallprotokoll Umbra und sperrt die Jedi Datenbank …“. Erst bei „Sicher“ wird gesperrt. Die Scan-Funktion bei den Planeten wurde entfernt.
+## Archiv sperren (Dialogkette)
+„Sperre vorbereiten“ öffnet drei Fenster: Hinweis (GITs nötig) → Bestätigung mit deinem Namen → Meldung „/git <Name> autorisiert sperrt das Archiv und sperrt die Jedi Datenbank …“. Erst bei „Sicher“ wird gesperrt. Die Scan-Funktion bei den Planeten wurde entfernt.
 
 ## Berichte freigeben
 - Die Jedi Leitung vergibt unter Konten den Knopf „Freigeben erlauben“ (Jedi Leitung darf immer).
 - Im Bericht: „Freigeben“ → legt der Freigebende ein Passwort (8–100 Zeichen) fest und erhält den Link `/d/<Token>`.
-- Abruf nur mit Link UND Passwort (öffentliche Seite `public/d.html`, ohne Anhänge, Stand eingefroren). Widerruf jederzeit; beim Löschen des Berichts erlischt der Link. Falsche Versuche werden begrenzt, bei Notfall UMBRA ist der Abruf gesperrt. Passwörter stehen nie in den Logs.
+- Abruf nur mit Link UND Passwort (öffentliche Seite `public/d.html`, ohne Anhänge, Stand eingefroren). Widerruf jederzeit; beim Löschen des Berichts erlischt der Link. Falsche Versuche werden begrenzt, bei Archiv sperren ist der Abruf gesperrt. Passwörter stehen nie in den Logs.
 
 
 **Karte:** Mausrad zoomt die Galaxis Karte (bis 8x) zum Mauszeiger, mit gedrückter Maus verschiebt man den Ausschnitt, Doppelklick setzt zurück. Bei normaler Größe scrollt das Rad weiter die Seite.

@@ -21,9 +21,9 @@ const COOKIE = 'sh_sess';
 
 const ROLES = { owner: 4 };
 // Einzelrechte, pro Gruppe auf der Website (Konto -> Gruppen und Rechte) vergebbar
-const PERMS = ['persons', 'files', 'reports', 'opsStart', 'opsManage', 'map', 'others', 'config', 'lockdown', 'open', 'intern', 'secret', 'logs', 'accounts', 'groups', 'archive'];
+const PERMS = ['persons', 'files', 'reports', 'opsStart', 'opsManage', 'map', 'others', 'config', 'lockdown', 'open', 'intern', 'secret', 'logs', 'accounts', 'groups', 'archive', 'release'];
 const ALLP = {}; PERMS.forEach(function (x) { ALLP[x] = true; });
-const PERM_LBL = { persons: 'Personen', files: 'Akten', reports: 'Berichte', opsStart: 'Op. starten', opsManage: 'Op. steuern', map: 'Karte', others: 'Fremde Inhalte', config: 'Anpassung', lockdown: 'Notfall', open: 'Offen lesen', intern: 'Intern lesen', secret: 'Vertraulich lesen', logs: 'Logs', accounts: 'Konten', groups: 'Gruppen', archive: 'Archiv' };
+const PERM_LBL = { persons: 'Personen', files: 'Akten', reports: 'Berichte', opsStart: 'Op. starten', opsManage: 'Op. steuern', map: 'Karte', others: 'Fremde Inhalte', config: 'Anpassung', lockdown: 'Archiv sperren', open: 'Offen lesen', intern: 'Intern lesen', secret: 'Vertraulich lesen', logs: 'Logs', accounts: 'Konten', groups: 'Gruppen', archive: 'Archiv', release: 'Berichte freigeben' };
 const WRITE_PERMS = ['persons', 'files', 'reports', 'opsStart'];            // früher „Schreiben“
 const MANAGE_PERMS = ['opsManage', 'map', 'others', 'config', 'lockdown'];  // früher „Verwalten“
 const RANK_MAX = 10, RANK_OWNER = 11, BUILTIN_RANK = { owner: RANK_OWNER };
@@ -634,7 +634,7 @@ function wiaOut(x, me, kinds) {
   });
   return o;
 }
-function canRelease(u) { return !!u && !u.blocked && (u.role === 'owner' || !!u.rel); }
+function canRelease(u) { return !!u && !u.blocked && (u.role === 'owner' || !!u.rel || can(u, 'release')); }
 const NAVKEYS = ['dashboard', 'register', 'berichte', 'karte', 'ops', 'auftraege', 'archiv', 'logs', 'konto'];
 function cleanPrefs(b) {
   const o = { accent: '', density: 'normal', nav: [], hide: [], theme: 'dark', bg: '', font: 'display', radius: 'normal', scale: 100, contrast: 'normal', stars: true, scan: true, calm: false, noboot: false, wide: false, start: '' };
@@ -695,7 +695,7 @@ async function api(req, res, url) {
   }
   if (db.lockdown.active && ['/api/session', '/api/login', '/api/logout'].indexOf(p) < 0) {
     const lu = sessionUser(req);
-    if (lu && !can(lu, 'lockdown')) return send(res, 403, { error: 'Notfall: Die Seite ist für dein Konto gesperrt.', code: 'lockdown' });
+    if (lu && !can(lu, 'lockdown')) return send(res, 403, { error: 'Archiv gesperrt: Die Seite ist für dein Konto gesperrt.', code: 'lockdown' });
   }
   if (['/api/session', '/api/login', '/api/logout', '/api/password'].indexOf(p) < 0) {
     const cu = sessionUser(req);
@@ -1050,7 +1050,7 @@ async function api(req, res, url) {
     const me = need(req, 'lockdown');
     const b = await readBody(req);
     db.lockdown = b.active === true ? { active: true, by: me.name, ts: Date.now() } : { active: false };
-    logAct(me, db.lockdown.active ? 'Notfall UMBRA ausgelöst' : 'Notfall UMBRA beendet', db.lockdown.active ? '/git ' + dispName(me) + ' autorisiert Notfallprotokoll Umbra' : '');
+    logAct(me, db.lockdown.active ? 'Archiv gesperrt' : 'Archiv entsperrt', db.lockdown.active ? '/git ' + dispName(me) + ' sperrt das Archiv' : '');
     bump();
     return send(res, 200, { ok: true, lockdown: db.lockdown.active });
   }
