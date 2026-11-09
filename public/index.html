@@ -525,12 +525,12 @@ html{scrollbar-color:var(--acc-d) var(--bg2)}
       <div class="split">
         <div class="a panel">
           <div class="toolbar">
-            <div class="field"><label for="q">SUCHE</label><input id="q" type="search" placeholder="Name, Ort oder Rang" autocomplete="off"></div>
+            <div class="field"><label for="q">SUCHE</label><input id="q" type="search" placeholder="Name, Heimat Welt oder Rang" autocomplete="off"></div>
             <div class="field"><label for="fs">ZUGEHÖRIGKEIT</label><select id="fs"><option value="">Alle</option></select></div>
-            <div class="field"><label for="so">SORTIERUNG</label><select id="so"><option value="rank" title="Nach Rang (Reihenfolge aus der Anpassung), innerhalb eines Rangs das neueste zuletzt">Rang</option><option value="name">Name</option><option value="power">Gefahrenlevel absteigend</option><option value="last">Zuletzt gesehen</option></select></div>
+            <div class="field"><label for="so">SORTIERUNG</label><select id="so"><option value="rank" title="Nach Rang (Reihenfolge aus der Anpassung), innerhalb eines Rangs das neueste zuletzt">Rang</option><option value="name">Name</option><option value="last">Zuletzt gesehen</option></select></div>
             <div class="field" style="flex:0 0 auto"><button class="btn" id="addP" hidden>+ Person hinzufügen</button></div>
           </div>
-          <div class="tbl"><table><thead><tr><th>Name</th><th>Rang</th><th>Zugehörigkeit</th><th>Gefahrenlevel</th><th>Ort</th></tr></thead><tbody id="pBody"></tbody></table></div>
+          <div class="tbl"><table style="min-width:0"><thead><tr><th>Name</th><th>Rang</th><th>Zugehörigkeit</th><th>Heimat Welt</th></tr></thead><tbody id="pBody"></tbody></table></div>
           <div class="dt" id="pCount"></div>
         </div>
         <aside class="b panel" id="pDetail" aria-live="polite"></aside>
@@ -1130,15 +1130,15 @@ function filtered(){
     return (!fs||p.s===fs)&&(!q||((p.n||'')+' '+(p.l||'')+' '+(p.r||'')+' '+(p.sp||'')).toLowerCase().indexOf(q)>-1)});
   var key=function(p){return String(p.seen||'').split('.').reverse().join('')};
   var ri=function(p){var i=CFG.ranks.indexOf(p.r);return i<0?999:i};
-  l.sort(function(a,b){return so==='rank'?(ri(a)-ri(b)||(a.ts||0)-(b.ts||0)):so==='power'?num(b.p,0)-num(a.p,0):(so==='last'?(key(b)>key(a)?1:-1):String(a.n).localeCompare(String(b.n)))});
+  l.sort(function(a,b){return so==='rank'?(ri(a)-ri(b)||(a.ts||0)-(b.ts||0)):(so==='last'?(key(b)>key(a)?1:-1):String(a.n).localeCompare(String(b.n)))});
   return l;
 }
 function renderLocs(){$('#locs').innerHTML=S.map.nodes.map(function(n){return '<option value="'+esc(n.id)+'">'}).join('')}
 function renderRegister(){
   var l=filtered();
   if(!S.add&&(S.selP===null||!find(S.selP)))S.selP=l.length?l[0].id:null;
-  $('#pBody').innerHTML=l.map(function(p){var c=stCol(p.s)||'#b9a785',pw=Math.max(0,Math.min(100,num(p.p,0)));
-    return '<tr data-p="'+esc(p.id)+'" class="'+(S.selP===p.id&&!S.add?'sel':'')+'" tabindex="0"><td><b>'+esc(p.n)+'</b>'+(p.groups&&p.groups.length?' <span class="muted" style="font-size:11px" title="'+esc(visText(p.groups))+'">eingeschränkt</span>':'')+'</td><td>'+esc(p.r)+'</td><td><span class="chip '+(stChip(p.s)||'amber')+'">'+esc(p.s)+'</span></td><td><span class="mini"><i style="width:'+pw+'%;background:'+c+'"></i></span><span class="mono" style="font-size:11px">'+pw+'</span></td><td>'+esc(p.l)+'</td></tr>'}).join('')||'<tr><td colspan="5" class="muted">Keine Akten gefunden.</td></tr>';
+  $('#pBody').innerHTML=l.map(function(p){var c=stCol(p.s)||'#b9a785';
+    return '<tr data-p="'+esc(p.id)+'" class="'+(S.selP===p.id&&!S.add?'sel':'')+'" tabindex="0"><td><b>'+esc(p.n)+'</b>'+(p.groups&&p.groups.length?' <span class="muted" style="font-size:11px" title="'+esc(visText(p.groups))+'">eingeschränkt</span>':'')+'</td><td>'+esc(p.r)+'</td><td><span class="chip '+(stChip(p.s)||'amber')+'">'+esc(p.s)+'</span></td><td>'+esc(p.l)+'</td></tr>'}).join('')||'<tr><td colspan="4" class="muted">Keine Akten gefunden.</td></tr>';
   $('#pCount').textContent=l.length+' von '+S.persons.length+' Akten';
   $('#regLead').textContent=P('persons')?'Du kannst Akten hinzufügen, ändern und entfernen. Änderungen sehen alle sofort.':'Du hast Lesezugriff. Akten ändern dürfen nur Gruppen mit dem Recht „Personen“.';
   renderDetail();
@@ -1166,13 +1166,12 @@ function renderDetail(){
   var el=$('#pDetail');
   if((S.add||S.editP)&&P('persons')){
     var e=S.editP?find(S.editP):null;if(S.editP&&!e){S.editP=null}
-    var pv=e||{n:'',r:CFG.ranks[0],s:defState(),p:50,l:'',note:''};
+    var pv=e||{n:'',r:CFG.ranks[0],s:defState(),l:'',note:''};
     el.innerHTML='<h2>'+(e?'Akte bearbeiten':'Neue Akte')+'</h2><form id="addForm" class="addf" autocomplete="off">'+
      '<div class="field"><label for="nName">NAME</label><input id="nName" type="text" maxlength="40" required value="'+esc(pv.n)+'"></div>'+
      '<div class="field"><label for="nRank">RANG</label><select id="nRank">'+CFG.ranks.map(function(r){return '<option'+(r===pv.r?' selected':'')+'>'+esc(r)+'</option>'}).join('')+'</select></div>'+
      '<div class="field"><label for="nState">ZUGEHÖRIGKEIT</label><select id="nState">'+stNames().map(function(r){return '<option'+(r===pv.s?' selected':'')+'>'+esc(r)+'</option>'}).join('')+'</select></div>'+
-     '<div class="field"><label for="nPow">GEFAHRENLEVEL <b id="nPowV" class="mono" style="color:var(--cyan)">'+num(pv.p,50)+'</b></label><input id="nPow" type="range" min="0" max="100" value="'+num(pv.p,50)+'"></div>'+
-     '<div class="field"><label for="nLoc">ORT</label><input id="nLoc" type="text" maxlength="40" list="locs" placeholder="System wählen oder eintippen" value="'+esc(e?pv.l:'')+'"></div>'+
+     '<div class="field"><label for="nLoc">HEIMAT WELT</label><input id="nLoc" type="text" maxlength="40" list="locs" placeholder="System wählen oder eintippen" value="'+esc(e?pv.l:'')+'"></div>'+
      '<div class="field"><label for="nSp">SPEZIES</label><input id="nSp" type="text" maxlength="60" placeholder="z. B. Mensch, Twi\'lek, Zabrak" value="'+esc(e?(pv.sp||''):'')+'"></div>'+
      '<div class="field"><label for="nLook">AUSSEHEN</label><textarea id="nLook" rows="3" maxlength="2000" placeholder="Größe, Haare, Augen, Kleidung, auffällige Merkmale ...">'+esc(e?(pv.look||''):'')+'</textarea></div>'+
      '<div class="field"><label>WEITERE FELDER (FREI WÄHLBAR)</label><div id="xList" style="display:grid;gap:8px">'+(e&&pv.extra?pv.extra:[]).map(xRow).join('')+'</div><div><button class="btn sm ghost" type="button" data-act="xadd">+ Feld hinzufügen</button></div><span class="muted" style="font-size:12px">Eigene Felder mit Bezeichnung und Beschreibung, z. B. Herkunft, Waffen, Fähigkeiten, Familie.</span></div>'+
@@ -1186,10 +1185,9 @@ function renderDetail(){
       (!S.persons.length&&P('persons')&&DEF_PERSONS.length?'<div><button class="btn sm" data-act="seed">Standarddaten laden</button></div>':'');
     return;
   }
-  var ini=String(p.n||'?').replace('Dr. ','').split(' ').map(function(x){return x[0]||''}).join('').slice(0,3),col=stCol(p.s)||'#b9a785',pw=Math.max(0,Math.min(100,num(p.p,0)));
+  var ini=String(p.n||'?').replace('Dr. ','').split(' ').map(function(x){return x[0]||''}).join('').slice(0,3);
   el.innerHTML='<div style="display:flex;gap:14px;align-items:center"><div class="avatar" aria-hidden="true">'+esc(ini)+'</div><div style="min-width:0"><h2 style="overflow-wrap:anywhere">'+esc(p.n)+'</h2><span class="chip '+(stChip(p.s)||'amber')+'" style="margin-top:6px">'+esc(p.s)+'</span>'+visChip(p.groups,'margin-top:6px')+'</div></div>'+
-   '<dl class="kv"><dt>Rang</dt><dd>'+esc(p.r)+'</dd>'+(p.sp?'<dt>Spezies</dt><dd style="overflow-wrap:anywhere">'+esc(p.sp)+'</dd>':'')+(p.look?'<dt>Aussehen</dt><dd style="overflow-wrap:anywhere;white-space:pre-wrap">'+esc(p.look)+'</dd>':'')+(p.extra||[]).map(function(x){return '<dt>'+esc(x.k)+'</dt><dd style="overflow-wrap:anywhere;white-space:pre-wrap">'+esc(x.v)+'</dd>'}).join('')+'<dt>Ort</dt><dd>'+esc(p.l)+'</dd><dt>Zuletzt</dt><dd>'+esc(p.seen)+new Date().getFullYear()+'</dd><dt>Notiz</dt><dd style="overflow-wrap:anywhere">'+esc(p.note)+'</dd></dl>'+
-   '<div class="gauge"><div class="l"><span>Gefahrenlevel</span><b style="color:'+col+'">'+pw+'</b></div><div class="bar"><i style="width:'+pw+'%;background:'+col+';box-shadow:0 0 12px '+col+'"></i></div></div>'+
+   '<dl class="kv"><dt>Rang</dt><dd>'+esc(p.r)+'</dd>'+(p.sp?'<dt>Spezies</dt><dd style="overflow-wrap:anywhere">'+esc(p.sp)+'</dd>':'')+(p.look?'<dt>Aussehen</dt><dd style="overflow-wrap:anywhere;white-space:pre-wrap">'+esc(p.look)+'</dd>':'')+(p.extra||[]).map(function(x){return '<dt>'+esc(x.k)+'</dt><dd style="overflow-wrap:anywhere;white-space:pre-wrap">'+esc(x.v)+'</dd>'}).join('')+'<dt>Heimat Welt</dt><dd>'+esc(p.l)+'</dd><dt>Zuletzt</dt><dd>'+esc(p.seen)+new Date().getFullYear()+'</dd><dt>Notiz</dt><dd style="overflow-wrap:anywhere">'+esc(p.note)+'</dd></dl>'+
    (P('persons')?'<div style="display:flex;flex-wrap:wrap;gap:8px">'+(P('persons')?'<button class="btn sm" data-act="edit">Bearbeiten</button>':'')+(P('persons')?'<button class="btn sm danger" data-act="flag">Als Gefahr markieren</button><button class="btn sm ghost" data-act="remove" style="margin-left:auto">'+(S.confirmDel===p.id?'Wirklich entfernen?':'Akte entfernen')+'</button>':'')+'</div>':
    '<p class="muted" style="margin:0;font-size:12px">Nur Lesen: Dir fehlt das Recht „Personen“.</p>')+filesHtml(p);
 }
@@ -1198,11 +1196,10 @@ $('#pBody').addEventListener('click',function(e){var tr=e.target.closest('tr[dat
 $('#pBody').addEventListener('keydown',function(e){if(e.key==='Enter'){var tr=e.target.closest('tr[data-p]');if(tr){S.selP=tr.dataset.p;S.add=false;S.editP=null;renderRegister()}}});
 $('#addP').addEventListener('click',function(){S.add=true;S.editP=null;renderRegister();var n=$('#nName');if(n)n.focus()});
 function today(){var d=new Date();return pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'}
-$('#pDetail').addEventListener('input',function(e){if(e.target.id==='nPow')$('#nPowV').textContent=e.target.value});
 $('#pDetail').addEventListener('submit',function(e){
   e.preventDefault();if(!S.db||!P('persons'))return;
   var n=$('#nName').value.trim();if(!n)return;
-  var data={n:n,r:$('#nRank').value,s:$('#nState').value,p:num($('#nPow').value,50),l:$('#nLoc').value.trim()||'Unbekannt',seen:today(),note:$('#nNote').value.trim()||'Keine Notiz.',sp:$('#nSp').value.trim(),look:$('#nLook').value.trim(),extra:readExtra(),ts:Date.now()};
+  var data={n:n,r:$('#nRank').value,s:$('#nState').value,l:$('#nLoc').value.trim()||'Unbekannt',seen:today(),note:$('#nNote').value.trim()||'Keine Notiz.',sp:$('#nSp').value.trim(),look:$('#nLook').value.trim(),extra:readExtra(),ts:Date.now()};
   var gv=readVis('pv');if(gv!==undefined)data.groups=gv;
   if(S.editP){var eid=S.editP;delete data.ts;delete data.seen;
     S.db.collection('persons').doc(eid).update(data).then(function(){S.editP=null;toast('Akte von '+n+' gespeichert.','cyan');renderRegister()}).catch(writeErr);return}

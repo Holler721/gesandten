@@ -259,7 +259,7 @@ function normalizeDb() {
   delete db.ris; delete db.inv; // Feldforschung entfernt
   Object.keys(db.persons).forEach(function (id) {
     const x = db.persons[id]; if (!isObj(x)) return;
-    delete x.kos; delete x.kosWhy; delete x.watch; delete x.watchWhy; delete x.wia; delete x.docs; // Beschatten entfernt
+    delete x.kos; delete x.kosWhy; delete x.p; delete x.watch; delete x.watchWhy; delete x.wia; delete x.docs; // Beschatten entfernt
     if (isObj(x.wia)) delete x.wia.kos;
     if (isObj(x.docs)) delete x.docs.kos;
   });
@@ -418,7 +418,6 @@ function cleanPerson(b, partial) {
   if ('n' in b || !partial) { o.n = str(b.n, 60); if (!o.n) bad('Name fehlt.'); }
   if ('r' in b || !partial) { if (db.config.ranks.indexOf(b.r) < 0) bad('Ungültiger Rang.'); o.r = b.r; }
   if ('s' in b || !partial) { if (stateNames().indexOf(b.s) < 0) bad('Ungültiger Status.'); o.s = b.s; }
-  if ('p' in b || !partial) { const p = Number(b.p); if (!isFinite(p)) bad('Ungültiges Gefahrenlevel.'); o.p = Math.max(0, Math.min(100, Math.round(p))); }
   if ('l' in b || !partial) { o.l = str(b.l, 40) || 'Unbekannt'; }
   if ('note' in b || !partial) { o.note = str(b.note, 300) || 'Keine Notiz.'; }
   if ('seen' in b || !partial) { o.seen = /^\d{2}\.\d{2}\.$/.test(b.seen) ? b.seen : today(); }
@@ -940,7 +939,7 @@ async function api(req, res, url) {
       const rb = await readBody(req);
       if (!can(pu, 'persons')) return send(res, 403, { error: 'Dafür fehlen dir die Rechte (Personen).' });
       const o = cleanPerson(rb, true);
-      const LBL = { n: 'Name', r: 'Rang', s: 'Zugehörigkeit', p: 'Gefahrenlevel', l: 'Ort', note: 'Notiz', groups: 'Sichtbarkeit', sp: 'Spezies', look: 'Aussehen', extra: 'Weitere Felder' };
+      const LBL = { n: 'Name', r: 'Rang', s: 'Zugehörigkeit', l: 'Heimat Welt', note: 'Notiz', groups: 'Sichtbarkeit', sp: 'Spezies', look: 'Aussehen', extra: 'Weitere Felder' };
       const ch = [];
       Object.keys(o).forEach(function (k) {
         if (JSON.stringify(o[k]) === JSON.stringify(cur[k])) return;
