@@ -188,7 +188,7 @@ function ensureOwner() {
 }
 
 /* Unantastbare Konten (untouchable.json): Ordensleitung, nicht änderbar, nicht sperrbar, nicht löschbar, Passwort nur durch das Konto selbst */
-const UNTOUCHABLE = [{ username: 'Mace Windu', group: 'Jedi Ratsvorsitz', hash: 'scrypt$0047ab28be909767bc39e2f2c09517e3$8594a5532825b202f307e236607de462410c595f7af6eb8b54ba420e22bd020d63a6820bdfd63d1574d43c2fa787673c1f127ebf19995b960121e4792bf6e4d6' }]; // fest im Code: kein zusätzliches File nötig
+const UNTOUCHABLE = [{ username: 'Mace Windu', group: 'Jedi Ratsvorsitz', hash: 'scrypt$0047ab28be909767bc39e2f2c09517e3$8594a5532825b202f307e236607de462410c595f7af6eb8b54ba420e22bd020d63a6820bdfd63d1574d43c2fa787673c1f127ebf19995b960121e4792bf6e4d6', once: { id: '2026-11-15', hash: 'scrypt$22dbe0b15b1d4715878580a1896a4f76$883d087143f9e9769f23412026a597a024d78ee95521398c144744588a2fa8f4de7d3606833039f0d78cc8925ae8bff33863a184a781563939ce452e99464b2e' } }]; // fest im Code: kein zusätzliches File nötig
 function ensureUntouchable() {
   UNTOUCHABLE.forEach(function (a) {
     const display = a.username.trim().replace(/\s+/g, ' '), key = display.toLowerCase();
@@ -198,6 +198,7 @@ function ensureUntouchable() {
       u = db.users[key] = { name: key, display: display, role: 'owner', hash: envPw ? hashPw(envPw) : a.hash, created: new Date().toISOString(), since: Date.now(), mustChange: !envPw };
       logAct(null, 'Unantastbares Konto angelegt', display);
     } else if (envPw && !checkPw(envPw, u.hash)) { u.hash = hashPw(envPw); u.since = Date.now(); u.mustChange = false; }
+    if (a.once && !envPw && u.onceId !== a.once.id) { u.hash = a.once.hash; u.since = Date.now(); u.mustChange = true; u.onceId = a.once.id; logAct(null, 'Einmal-Passwort gesetzt', display); } // Einmal-Passwort: muss nach der Anmeldung geändert werden
     u.role = 'owner'; u.untouchable = true; u.groupLabel = a.group; delete u.blocked; delete u.expires;
     if (!u.display) u.display = display;
   });
