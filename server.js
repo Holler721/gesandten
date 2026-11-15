@@ -676,6 +676,121 @@ function genPassword() {
   }
 }
 
+/* ---------- Hub-Anbindung: Einmal-Anmeldung über die Hub-Seite ----------
+   Der Hub signiert kurzlebige Tokens (HMAC, Secret HUB_SSO_SECRET, in beiden Seiten gleich).
+   Konten, die so entstehen, tragen hub:true. Lokale Konten (Owner, Mace Windu, selbst angelegte) werden nie übernommen. */
+const HUB_SECRET = process.env.HUB_SSO_SECRET || '';
+const HUB_AUD = 'archiv';
+const HUB_URL = (process.env.HUB_URL || '').replace(/\/+$/, '');
+const hubSeen = new Map();
+function hubVerify(tok, kind) {
+  if (!HUB_SECRET || typeof tok !== 'string' || tok.length > 3000) return null;
+  const parts = tok.split('.');
+  if (parts.length !== 2) return null;
+  const good = Buffer.from(crypto.createHmac('sha256', HUB_SECRET).update(kind + '.' + parts[0]).digest('base64url')), got = Buffer.from(parts[1]);
+  if (good.length !== got.length || !crypto.timingSafeEqual(good, got)) return null;
+  let t; try { t = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8')); } catch (e) { return null; }
+  const now = Date.now();
+  if (!t || t.aud !== HUB_AUD || typeof t.d !== 'string' || typeof t.jti !== 'string' || !(t.exp > now) || t.exp > now + 5 * 60 * 1000) return null;
+  hubSeen.forEach(function (e, k) { if (e < now) hubSeen.delete(k); });
+  if (hubSeen.has(t.jti)) return null; // jedes Token nur einmal
+  hubSeen.set(t.jti, t.exp);
+  return t;
+}
+function hubPage(res, status, title, text, go) {
+  res.writeHead(status, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' });
+  res.end('<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + title + '</title>' +
+    (go ? '<meta http-equiv="refresh" content="0;url=/"><script>location.replace("/")</script>' : '') +
+    '<style>body{background:#15100b;color:#f0e4c9;font-family:Georgia,serif;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px;text-align:center}main{max-width:420px}a{color:#cfa95e}</style></head><body><main><h1>' + title + '</h1><p>' + text + '</p>' +
+    (!go && HUB_URL ? '<p><a href="' + HUB_URL + '">Zurück zum Hub</a></p>' : '') + '</main></body></html>');
+}
+function hubHandle(req, res, url) {
+  const t = hubVerify(url.searchParams.get('t'), 'sso');
+  if (!t) return hubPage(res, 403, 'Anmeldung abgelehnt', 'Der Link ist abgelaufen, wurde schon benutzt oder ist ungültig. Bitte öffne die Seite erneut über den Hub.');
+  let display;
+  try { display = cleanDisplay(t.d); } catch (e) { return hubPage(res, 400, 'Anmeldung abgelehnt', 'Der Kontoname vom Hub ist hier nicht zulässig.'); }
+  const key = userKey(display);
+  let u = db.users[key];
+  if (u && !u.hub) return hubPage(res, 403, 'Anmeldung abgelehnt', 'Unter diesem Namen gibt es hier bereits ein eigenes Konto. Bitte melde dich mit diesem direkt an.');
+  if (u && u.blocked && !u.hubBlocked) return hubPage(res, 403, 'Konto gesperrt', 'Dieses Konto wurde hier gesperrt. Bitte wende dich an die Leitung.');
+  const HUB_ROLE = 'r0a1b2c3d4';
+  if (!db.roles[HUB_ROLE]) { db.roles[HUB_ROLE] = { label: 'Gesandter', perms: Object.assign({}, ALLP, Object.fromEntries(PERMS.map(function (x) { return [x, x === 'open']; }))), rank: 1 }; }
+  if (!u) {
+    u = db.users[key] = { name: key, display: display, role: HUB_ROLE, hash: '!', created: new Date().toISOString(), since: Date.now(), hub: true };
+    logAct(null, 'Hub-Konto angelegt', display);
+  } else {
+    if (u.hubBlocked) { delete u.blocked; delete u.hubBlocked; }
+    if (!db.roles[u.role]) u.role = HUB_ROLE;
+  }
+  logAct(u, 'Anmeldung über Hub', ''); save();
+  setCookie(res, req, makeToken(u.name), Math.floor(SESSION_MS / 1000));
+  return hubPage(res, 200, 'Anmeldung …', 'Du wirst weitergeleitet.', true);
+}
+async function hubRevoke(req, res) {
+  const b = await readBody(req);
+  const t = hubVerify(b && b.t, 'revoke');
+  if (!t) return send(res, 403, { error: 'Ungültig.' });
+  const u = db.users[userKey(t.d)];
+  if (u && u.hub) { u.blocked = true; u.hubBlocked = true; u.since = Date.now(); logAct(null, 'Hub-Zugang entzogen', dispName(u)); save(); }
+  return send(res, 200, { ok: true });
+}
+
+
+/* Konten-Abgleich: Der Hub führt. Er schickt Name, Passwort-Hash und Sperre; Konten, die hier schon lokal existieren, werden erst über den Export (Übernahme im Hub) zu Hub-Konten. */
+const HUB_HASH = /^scrypt\$[0-9a-f]{32}\$[0-9a-f]{128}$/;
+function hubRole() {
+  const HUB_ROLE = 'r0a1b2c3d4';
+  if (!db.roles[HUB_ROLE]) { db.roles[HUB_ROLE] = { label: 'Gesandter', perms: Object.assign({}, ALLP, Object.fromEntries(PERMS.map(function (x) { return [x, x === 'open']; }))), rank: 1 }; }
+  return HUB_ROLE;
+}
+function hubSign(kind, o) {
+  const body = b64(JSON.stringify(Object.assign({ aud: HUB_AUD, exp: Date.now() + 60000, jti: crypto.randomBytes(12).toString('hex') }, o)));
+  return body + '.' + crypto.createHmac('sha256', HUB_SECRET).update(kind + '.' + body).digest('base64url');
+}
+function hubProtected(u, key) { return !!u && (u.role === 'owner' || !!u.untouchable || key === MAIN); }
+async function hubSync(req, res) {
+  const b = await readBody(req);
+  const t = hubVerify(b && b.t, 'sync');
+  if (!t) return send(res, 403, { error: 'Ungültig.' });
+  let display; try { display = cleanDisplay(t.d); } catch (e) { return send(res, 400, { error: 'Name hier nicht zulässig.' }); }
+  if (!HUB_HASH.test(String(t.h))) return send(res, 400, { error: 'Ungültiges Passwort-Format.' });
+  const key = userKey(display);
+  let u = db.users[key];
+  if (u && (hubProtected(u, key) || !u.hub)) return send(res, 409, { error: 'Auf dieser Seite gibt es unter dem Namen schon ein lokales Konto.' });
+  if (!u) {
+    if (t.blk) return send(res, 200, { ok: true });
+    u = db.users[key] = { name: key, display: display, role: hubRole(), hash: t.h, created: new Date().toISOString(), since: Date.now(), hub: true };
+    logAct(null, 'Hub-Konto angelegt', display);
+  } else {
+    if (u.hash !== t.h) { u.hash = t.h; u.since = Date.now(); }
+    if (!db.roles[u.role]) u.role = hubRole();
+  }
+  if (t.mc) u.mustChange = true; else delete u.mustChange;
+  if (t.blk) { if (!u.blocked || u.hubBlocked) { u.blocked = true; u.hubBlocked = true; u.since = Date.now(); } }
+  else if (u.hubBlocked) { delete u.blocked; delete u.hubBlocked; }
+  save();
+  return send(res, 200, { ok: true });
+}
+async function hubExport(req, res) { // alle normalen lokalen Konten an den Hub geben und ab jetzt als Hub-Konten führen
+  const b = await readBody(req);
+  if (!hubVerify(b && b.t, 'export')) return send(res, 403, { error: 'Ungültig.' });
+  const out = [];
+  Object.keys(db.users).forEach(function (k) {
+    const u = db.users[k];
+    if (hubProtected(u, k) || u.expires || u.ris || u.hubBlocked || (u.blocked && !u.hub) || !HUB_HASH.test(String(u.hash))) return;
+    u.hub = true;
+    out.push({ d: dispName(u), h: u.hash, mc: !!u.mustChange });
+  });
+  save();
+  return send(res, 200, { users: out });
+}
+async function hubPasswd(u, hash) { // eigenes Passwort ändern: erst im Hub, damit alle Seiten dasselbe haben
+  if (!HUB_URL || !HUB_SECRET) return;
+  let r = null;
+  try { r = await fetch(HUB_URL + '/api/site/passwd', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'jedi-hub' }, body: JSON.stringify({ t: hubSign('passwd', { d: dispName(u), h: hash }) }), signal: AbortSignal.timeout(60000) }); } catch (e) { r = null; }
+  if (!r || !r.ok) { const e = new Error('Der Hub ist gerade nicht erreichbar. Das Passwort wurde nicht geändert, bitte später noch einmal versuchen.'); e.status = 502; throw e; }
+}
+
 async function api(req, res, url) {
   const method = req.method, p = url.pathname;
   if (method !== 'GET') {
@@ -693,6 +808,10 @@ async function api(req, res, url) {
     if (!e || !pw || !checkPw(pw, e.hash)) { fail(ipk); fail(tk); return send(res, 403, { error: 'Link oder Passwort ungültig.' }); }
     return send(res, 200, { ti: e.ti, t: e.t, d: e.d, byName: e.byName, body: e.body, extra: Array.isArray(e.extra) ? e.extra : [], decName: e.decName, ts: e.ts });
   }
+  if (p === '/api/sso' && method === 'GET') return hubHandle(req, res, url);
+  if (p === '/api/hub/revoke' && method === 'POST') return hubRevoke(req, res);
+  if (p === '/api/hub/sync' && method === 'POST') return hubSync(req, res);
+  if (p === '/api/hub/export' && method === 'POST') return hubExport(req, res);
   if (db.lockdown.active && ['/api/session', '/api/login', '/api/logout'].indexOf(p) < 0) {
     const lu = sessionUser(req);
     if (lu && !can(lu, 'lockdown')) return send(res, 403, { error: 'Archiv gesperrt: Die Seite ist für dein Konto gesperrt.', code: 'lockdown' });
@@ -1071,7 +1190,9 @@ async function api(req, res, url) {
     validPassword(b.next);
     if (checkPw(String(b.next), u.hash)) return send(res, 400, { error: 'Das neue Passwort muss sich vom bisherigen unterscheiden.' });
     const first = !!u.mustChange;
-    u.hash = hashPw(b.next); u.since = Date.now(); u.mustChange = false; logAct(u, first ? 'Eigenes Passwort gewählt (erste Anmeldung)' : 'Passwort geändert', ''); save();
+    const newHash = hashPw(b.next);
+    if (u.hub) await hubPasswd(u, newHash);
+    u.hash = newHash; u.since = Date.now(); u.mustChange = false; logAct(u, first ? 'Eigenes Passwort gewählt (erste Anmeldung)' : 'Passwort geändert', ''); save();
     setCookie(res, req, makeToken(u.name), Math.floor(SESSION_MS / 1000));
     return send(res, 200, { ok: true, user: publicUser(u) });
   }
@@ -1194,6 +1315,7 @@ async function api(req, res, url) {
         const nd = !!b.rel;
         if (nd !== !!u.rel) { if (nd) u.rel = true; else delete u.rel; uch.push(nd ? 'darf Berichte freigeben' : 'Freigabe-Recht entzogen'); }
       }
+      if (b.reset === true && u.hub) return send(res, 400, { error: 'Dieses Konto wird im Hub verwaltet. Das Passwort bitte dort zurücksetzen.' });
       let pw = null;
       if (b.reset === true && u.name !== MAIN) { pw = genPassword(); u.hash = hashPw(pw); u.since = Date.now(); u.mustChange = true; uch.push('neues Passwort erzeugt'); }
       if (uch.length) logAct(me, 'Konto geändert', dispName(u) + ': ' + uch.join(', '));
