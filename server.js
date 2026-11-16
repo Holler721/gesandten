@@ -1351,7 +1351,9 @@ const server = http.createServer(function (req, res) {
     fs.readFile(INDEX_FILE, function (err, buf) {
       if (err) { res.writeHead(500); return res.end('index.html fehlt'); }
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
-      res.end(req.method === 'HEAD' ? undefined : buf);
+      let page = buf.toString('utf8');
+      if (HUB_URL && /^https?:\/\//i.test(HUB_URL)) page = page.replace('<head>', '<head><meta name="hub-url" content="' + HUB_URL.replace(/["&<>]/g, '') + '">');
+      res.end(req.method === 'HEAD' ? undefined : page);
     });
     return;
   }

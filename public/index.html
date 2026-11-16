@@ -444,6 +444,7 @@ html{scrollbar-color:var(--acc-d) var(--bg2)}
       <button data-nav="konto" id="navKonto" hidden><span>Jedi-Identität</span><small>SR-KT</small></button>
       <button data-nav="einstellungen" id="navPref"><span>Datenbankverwaltung</span><small>SR-ES</small></button>
     </nav>
+    <a class="btn sm ghost" id="hubBtn" href="#" hidden style="display:block;text-align:center;text-decoration:none;line-height:1.2;padding:11px 10px;margin:12px 0 14px">← Zurück zum Hub</a>
     <div class="foot">Befehlspalette <span class="kbd">Strg K</span><br><span class="kbd">Archiv sperren</span></div>
   </aside>
 
@@ -661,7 +662,6 @@ html{scrollbar-color:var(--acc-d) var(--bg2)}
       </section>
     </section>
 
-    <footer>JEDI DATENBANK · DISZIPLIN · VERBORGENHEIT · LICHT</footer>
   </div>
 </div>
 
@@ -1896,6 +1896,7 @@ $('#loginForm').addEventListener('submit',function(e){
     $('#lErr').textContent=err&&err.status===429?'Zu viele Versuche. Bitte warte 15 Minuten.':(err&&err.status?(err.message||'Benutzername oder Passwort stimmt nicht.'):'Der Server ist nicht erreichbar.');
   }).then(function(){b.disabled=false});
 });
+try{var hm=document.querySelector('meta[name=hub-url]');if(hm&&hm.content){var hb=$('#hubBtn');hb.href=hm.content;hb.hidden=false}}catch(e){}
 $('#logoutBtn').addEventListener('click',function(){
   api('POST','/api/logout').catch(function(){}).then(function(){H.user=null;showLogin()});
 });
